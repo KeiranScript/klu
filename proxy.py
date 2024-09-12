@@ -55,10 +55,8 @@ class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
         conn.close()
 
-# Configuration
 PORT = 80
 
-# Start the server
 with socketserver.TCPServer(("", PORT), ReverseProxyHTTPRequestHandler) as httpd:
     print(f"Serving at port {PORT}")
     httpd.serve_forever()
