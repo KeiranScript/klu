@@ -12,7 +12,7 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 KEY_FILE = "keys.json"
 UPLOAD_DIR = "uploads"
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://kuuichi.xyz"
 
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png",
