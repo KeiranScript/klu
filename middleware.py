@@ -5,6 +5,8 @@ from pathlib import Path
 import hashlib
 from collections import defaultdict
 from datetime import datetime, timedelta
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import RedirectResponse
 
 # Constants
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
@@ -15,7 +17,7 @@ ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png",
                       "mp3", "avi", "mkv",
                       "zip", "rar", "7z",
                       "iso", "bin", "dmg",
-                      "apk", "deb", "rpm"
+                      "apk", "deb", "rpm",
                       "tar", "gz", "xz",
                       "bz2", "zst", "lz4"
                       }
@@ -108,3 +110,11 @@ def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
     upload_time = time.strftime("%d-%m-%Y %H:%M", time.localtime())
 
     return file_path, file_size, file.content_type.split("/")[-1], upload_time
+
+
+class RedirectOn405Middleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        if response.status_code == 405:
+            return RedirectResponse(url="/docs")
+        return response

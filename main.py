@@ -1,5 +1,6 @@
 from middleware import (verify_api_key, validate_file,
-                        handle_file_upload, rate_limit)
+                        handle_file_upload, rate_limit,
+                        RedirectOn405Middleware)
 
 import json
 from fastapi import FastAPI, Depends, File, UploadFile
@@ -9,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 app = FastAPI()
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.add_middleware(RedirectOn405Middleware)
 
 KEY_FILE = "keys.json"
 UPLOAD_DIR = "uploads"
