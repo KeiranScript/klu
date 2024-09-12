@@ -29,57 +29,31 @@ def verify_api_key(api_key: str):
     if api_key in keys:
         return keys[api_key]
     raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid API Key"
-    )
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key")
 
 
-def get_filesize(file_path: Path):
-    in_bytes = file_path.stat().st_size
-
-    if in_bytes >= 1024:
-        in_kb = in_bytes / 1024
-        if in_kb >= 1024:
-            in_mb = in_kb / 1024
-            if in_mb >= 1024:
-                in_gb = in_mb / 1024
-                return f"{in_gb:.2f} GB"
-            return f"{in_mb:.2f} MB"
-        return f"{in_kb:.2f} KB"
-
-
-def generate_random_filename(extension: str):
-    random_str = ''.join(random.choices(
-        string.ascii_letters + string.digits, k=8))
-    return f"{random_str}.{extension}"
-
-
-def save_uploaded_file(file: UploadFile, username: str):
+def handle_file_upload(file: UploadFile, username: str):
     file_extension = file.filename.split('.')[-1]
-    random_filename = generate_random_filename(file_extension)
-
+    random_filename = ''.join(random.choices(
+        string.ascii_letters + string.digits, k=8)) + f".{file_extension}"
     user_dir = Path(base_upload_dir) / username
     user_dir.mkdir(parents=True, exist_ok=True)
-
     file_path = user_dir / random_filename
-
     with open(file_path, "wb") as buffer:
         buffer.write(file.file.read())
-
+    file_size = file_path.stat().st_size
     upload_time = time.strftime("%d-%m-%Y %H:%M", time.localtime())
-
-    return file_path, upload_time
+    return file_path, file_size, file.content_type.split("/")[-1], upload_time
 
 
 @app.post("/")
-async def upload(file: UploadFile = File(...),
-                 username: str = Depends(verify_api_key)):
-    file_path, upload_time = save_uploaded_file(file, username)
-    file_url = base_url + "/" + str(file_path)
-
+async def upload(file: UploadFile = File(...), username: str = Depends(verify_api_key)):
+    file_path, file_size, file_type, upload_time = handle_file_upload(
+        file, username)
+    file_url = f"{base_url}/{file_path}"
     return JSONResponse(content={
         "file_url": file_url,
-        "file-size: ": get_filesize(file_path),
-        "file-type": file.content_type.split("/")[-1],
+        "file-size": f"{file_size / 1024**2:.2f} MB" if file_size >= 1024**2 else f"{file_size / 1024:.2f} KB",
+        "file-type": file_type,
         "date-uploaded": upload_time
     })
