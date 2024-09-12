@@ -15,9 +15,6 @@ UPLOAD_DIR = "uploads"
 BASE_URL = "https://kuuichi.xyz"
 
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png",
-                      "pdf", "txt", "doc",
-                      "docx", "xls", "xlsx"}
 
 
 def load_api_keys():
