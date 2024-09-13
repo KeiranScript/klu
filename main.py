@@ -89,10 +89,11 @@ async def list_files(username: str = Depends(verify_api_key)):
             file_path.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S')
         file_type = file_name.split('.')[-1] if '.' in file_name else "unknown"
 
-        # Generate a UUID-based delete URL for each file
+        # Look up the UUID if it exists, otherwise provide a fallback
         delete_uuid = next(
-            key for key, value in file_delete_map.items() if value == file_path)
-        delete_url = f"{BASE_URL}/delete/{delete_uuid}"
+            (key for key, value in file_delete_map.items() if value == file_path), None)
+        delete_url = f"{
+            BASE_URL}/delete/{delete_uuid}" if delete_uuid else "N/A"
 
         files.append({
             "file_name": file_name,
@@ -100,7 +101,7 @@ async def list_files(username: str = Depends(verify_api_key)):
             "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2 else f"{filesize / 1024:.2f} KB",
             "file-type": file_type,
             "date-uploaded": upload_time,
-            "delete_url": delete_url  # Include the delete URL in the response
+            "delete_url": delete_url  # Safely include the delete URL or "N/A"
         })
 
     return JSONResponse(content={"files": files})
