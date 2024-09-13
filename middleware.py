@@ -1,6 +1,6 @@
 import json
 import time
-from fastapi import HTTPException, status, UploadFile
+from fastapi import HTTPException, Header, status, UploadFile
 from pathlib import Path
 import hashlib
 from collections import defaultdict
@@ -27,13 +27,10 @@ def load_api_keys():
 keys = load_api_keys()
 
 
-def verify_api_key(api_key: str):
-    if api_key in keys:
-        return keys[api_key]
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid API Key"
-    )
+def verify_api_key(api_key: str = Header(None)):
+    if not api_key or api_key not in keys:
+        raise HTTPException(status_code=401, detail="Invalid API Key")
+    return keys[api_key]
 
 
 def rate_limit(api_key: str):
