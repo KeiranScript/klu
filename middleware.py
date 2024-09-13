@@ -30,8 +30,7 @@ keys = load_api_keys()
 def verify_api_key(api_key: str = Header(None)):
     if not api_key or api_key not in keys:
         raise HTTPException(status_code=401, detail="Invalid API Key")
-    else:
-        return keys[api_key]
+    return keys[api_key]  # This should return the username
 
 
 def rate_limit(api_key: str):
