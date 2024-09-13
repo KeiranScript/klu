@@ -2,6 +2,7 @@ from middleware import (verify_api_key, validate_file,
                         handle_file_upload, rate_limit,
                         RedirectOn405Middleware)
 
+from pathlib import Path
 import json
 import os
 from datetime import datetime
@@ -50,26 +51,25 @@ async def upload(file: UploadFile = File(...),
 
 @app.get("/files")
 async def list_files(username: str = Depends(verify_api_key)):
-    user_dir = os.path.join(UPLOAD_DIR, username)
+    user_dir = Path(UPLOAD_DIR) / username
 
-    if not os.path.exists(user_dir):
-        return JSONResponse(content={"error": "User directory not found"},
-                            status_code=404)
+    if not user_dir.exists():
+        return JSONResponse(content={"error": "User directory not found"}, status_code=404)
 
     files = []
 
     for file_name in os.listdir(user_dir):
-        file_path = os.path.join(user_dir, file_name)
-        filesize = os.path.getsize(file_path)
+        file_path = user_dir / file_name
+        filesize = file_path.stat().st_size
         upload_time = datetime.fromtimestamp(
-            os.path.getctime(file_path)).strftime('%Y-%m-%d %H:%M:%S')
+            file_path.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S')
         file_type = file_name.split('.')[-1] if '.' in file_name else "unknown"
 
         files.append({
             "file_name": file_name,
-            "file_url": f"{BASE_URL}/{user_dir}/{file_name}",
-            "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2
-            else f"{filesize / 1024:.2f} KB",
+            # Correct URL path
+            "file_url": f"{BASE_URL}/uploads/{username}/{file_name}",
+            "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2 else f"{filesize / 1024:.2f} KB",
             "file-type": file_type,
             "date-uploaded": upload_time
         })

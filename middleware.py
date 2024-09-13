@@ -78,7 +78,7 @@ def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
         :8] + f".{file_extension}"
 
     user_dir = Path(upload_dir) / username
-    user_dir.mkdir(parents=True, exist_ok=True)
+    user_dir.mkdir(parents=True, exist_ok=True)  # Ensure directory exists
 
     file_path = user_dir / random_filename
     with open(file_path, "wb") as buffer:
