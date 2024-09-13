@@ -3,6 +3,7 @@ from middleware import (verify_api_key, validate_file,
                         RedirectOn405Middleware)
 
 import json
+from pathlib import Path
 from fastapi import FastAPI, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -44,3 +45,13 @@ async def upload(file: UploadFile = File(...),
         "file-type": file_type,
         "date-uploaded": upload_time
     })
+
+
+@app.get("/uploads/{username}")
+async def list(username: str = Depends(verify_api_key)):
+    user_dir = Path(UPLOAD_DIR) / username
+    if not user_dir.exists():
+        return JSONResponse(content={"message": "No files found."},
+                            status_code=404)
+    files = [file.name for file in user_dir.iterdir()]
+    return JSONResponse(content={"files": files})
