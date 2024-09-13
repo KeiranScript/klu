@@ -4,6 +4,7 @@ import http.client
 from urllib.parse import urlparse
 import io
 
+
 class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         self.proxy_host = 'localhost'
@@ -54,6 +55,7 @@ class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             self.wfile.write(chunk)
 
         conn.close()
+
 
 PORT = 80
 

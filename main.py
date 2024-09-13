@@ -5,11 +5,10 @@ from uuid import uuid4
 import json
 import os
 from datetime import datetime
-from fastapi import FastAPI, Depends, File, UploadFile
+from fastapi import FastAPI, Depends, File, UploadFile, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.requests import Request
 
 app = FastAPI()
 
