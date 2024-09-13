@@ -27,10 +27,11 @@ def load_api_keys():
 keys = load_api_keys()
 
 
-def verify_api_key(api_key: str = Header(None)):
-    if not api_key or api_key not in keys:
+def verify_api_key(authorization: str = Header(None)):
+    if not authorization or authorization not in keys:
         raise HTTPException(status_code=401, detail="Invalid API Key")
-    return keys[api_key]  # This should return the username
+    # Return the username associated with the API key
+    return keys[authorization]
 
 
 def rate_limit(api_key: str):

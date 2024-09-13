@@ -38,7 +38,7 @@ async def upload(file: UploadFile = File(...),
     validate_file(file)
     file_path, file_size, file_type, upload_time = handle_file_upload(
         file, username, UPLOAD_DIR)
-    file_url = f"{BASE_URL}/{file_path}"
+    file_url = f"{BASE_URL}/uploads/{username}/{file_path.name}"
 
     return JSONResponse(content={
         "file_url": file_url,
@@ -67,7 +67,6 @@ async def list_files(username: str = Depends(verify_api_key)):
 
         files.append({
             "file_name": file_name,
-            # Correct URL path
             "file_url": f"{BASE_URL}/uploads/{username}/{file_name}",
             "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2 else f"{filesize / 1024:.2f} KB",
             "file-type": file_type,
@@ -75,3 +74,8 @@ async def list_files(username: str = Depends(verify_api_key)):
         })
 
     return JSONResponse(content={"files": files})
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
