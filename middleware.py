@@ -10,17 +10,6 @@ from fastapi.responses import RedirectResponse
 
 # Constants
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png",
-                      "pdf", "txt", "doc",
-                      "docx", "xls", "xlsx",
-                      "gif", "webp", "mp4",
-                      "mp3", "avi", "mkv",
-                      "zip", "rar", "7z",
-                      "iso", "bin", "dmg",
-                      "apk", "deb", "rpm",
-                      "tar", "gz", "xz",
-                      "bz2", "zst", "lz4"
-                      }
 RATE_LIMIT = 5  # Max number of requests
 RATE_LIMIT_TIME = timedelta(minutes=1)  # Time window for rate limiting
 KEY_FILE = "keys.json"
@@ -65,15 +54,6 @@ def rate_limit(api_key: str):
 
 
 def validate_file(file: UploadFile):
-    file_extension = file.filename.split('.')[-1].lower()
-
-    if file_extension not in ALLOWED_EXTENSIONS:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid file type. Allowed types: {
-                ', '.join(ALLOWED_EXTENSIONS)}"
-        )
-
     file_content = file.file.read()
     file_size = len(file_content)
 
