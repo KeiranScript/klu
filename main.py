@@ -1,6 +1,4 @@
-from middleware import (verify_api_key, validate_file,
-                        handle_file_upload, rate_limit,
-                        RedirectOn405Middleware)
+from middleware import verify_api_key, validate_file, handle_file_upload, rate_limit, RedirectOn405Middleware
 
 from pathlib import Path
 from uuid import uuid4
@@ -10,6 +8,8 @@ from datetime import datetime
 from fastapi import FastAPI, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.requests import Request
 
 app = FastAPI()
 
@@ -20,9 +20,9 @@ KEY_FILE = "keys.json"
 UPLOAD_DIR = "uploads"
 BASE_URL = "https://kuuichi.xyz"
 
-MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-
 file_delete_map = {}
+
+templates = Jinja2Templates(directory="templates")
 
 
 def load_api_keys():
@@ -44,7 +44,6 @@ async def upload(file: UploadFile = File(...),
 
     file_url = f"{BASE_URL}/uploads/{username}/{file_path.name}"
 
-    # Generate UUID and map it to the file path
     delete_uuid = str(uuid4())
     delete_url = f"{BASE_URL}/delete/{delete_uuid}"
     file_delete_map[delete_uuid] = file_path
@@ -55,22 +54,19 @@ async def upload(file: UploadFile = File(...),
         else f"{file_size / 1024:.2f} KB",
         "file-type": file_type,
         "date-uploaded": upload_time,
-        "delete_url": delete_url  # Include the delete URL in the response
+        "delete_url": delete_url
     })
 
 
 @app.get("/delete/{delete_uuid}")
-async def delete_file(delete_uuid: str):
-    # Find the file path from the UUID
+async def delete_file(request: Request, delete_uuid: str):
     file_path = file_delete_map.pop(delete_uuid, None)
 
     if not file_path or not os.path.exists(file_path):
-        return JSONResponse(content={"error": "File not found"}, status_code=404)
+        return templates.TemplateResponse("file_not_found.html", {"request": request})
 
-    # Delete the file
     os.remove(file_path)
-
-    return JSONResponse(content={"message": "File deleted successfully"})
+    return templates.TemplateResponse("file_deleted.html", {"request": request})
 
 
 @app.get("/files")
@@ -89,7 +85,6 @@ async def list_files(username: str = Depends(verify_api_key)):
             file_path.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S')
         file_type = file_name.split('.')[-1] if '.' in file_name else "unknown"
 
-        # Look up the UUID if it exists, otherwise provide a fallback
         delete_uuid = next(
             (key for key, value in file_delete_map.items() if value == file_path), None)
         delete_url = f"{
@@ -101,11 +96,10 @@ async def list_files(username: str = Depends(verify_api_key)):
             "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2 else f"{filesize / 1024:.2f} KB",
             "file-type": file_type,
             "date-uploaded": upload_time,
-            "delete_url": delete_url  # Safely include the delete URL or "N/A"
+            "delete_url": delete_url
         })
 
     return JSONResponse(content={"files": files})
-
 
 if __name__ == "__main__":
     import uvicorn
