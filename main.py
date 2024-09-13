@@ -3,6 +3,7 @@ from middleware import (verify_api_key, validate_file,
                         RedirectOn405Middleware)
 
 from pathlib import Path
+from uuid import uuid4
 import json
 import os
 from datetime import datetime
@@ -21,6 +22,8 @@ BASE_URL = "https://kuuichi.xyz"
 
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 
+file_delete_map = {}
+
 
 def load_api_keys():
     with open(KEY_FILE, 'r') as file:
@@ -38,15 +41,36 @@ async def upload(file: UploadFile = File(...),
     validate_file(file)
     file_path, file_size, file_type, upload_time = handle_file_upload(
         file, username, UPLOAD_DIR)
+
     file_url = f"{BASE_URL}/uploads/{username}/{file_path.name}"
+
+    # Generate UUID and map it to the file path
+    delete_uuid = str(uuid4())
+    delete_url = f"{BASE_URL}/delete/{delete_uuid}"
+    file_delete_map[delete_uuid] = file_path
 
     return JSONResponse(content={
         "file_url": file_url,
         "file-size": f"{file_size / 1024**2:.2f} MB" if file_size >= 1024**2
         else f"{file_size / 1024:.2f} KB",
         "file-type": file_type,
-        "date-uploaded": upload_time
+        "date-uploaded": upload_time,
+        "delete_url": delete_url  # Include the delete URL in the response
     })
+
+
+@app.get("/delete/{delete_uuid}")
+async def delete_file(delete_uuid: str):
+    # Find the file path from the UUID
+    file_path = file_delete_map.pop(delete_uuid, None)
+
+    if not file_path or not os.path.exists(file_path):
+        return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+    # Delete the file
+    os.remove(file_path)
+
+    return JSONResponse(content={"message": "File deleted successfully"})
 
 
 @app.get("/files")
