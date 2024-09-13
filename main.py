@@ -2,13 +2,15 @@ from middleware import verify_api_key, validate_file, handle_file_upload, rate_l
 
 from pathlib import Path
 from uuid import uuid4
-import json
-import os
 from datetime import datetime
 from fastapi import FastAPI, Depends, File, UploadFile, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+
+import random
+import json
+import os
 
 app = FastAPI()
 
@@ -99,6 +101,19 @@ async def list_files(username: str = Depends(verify_api_key)):
         })
 
     return JSONResponse(content={"files": files})
+
+
+@app.get("/lol")
+async def get_random_image():
+    image_dir = Path("static/images")
+    image_files = list(image_dir.glob("*.*"))
+
+    if not image_files:
+        return JSONResponse(content={"error": "No images found"}, status_code=404)
+
+    random_image = random.choice(image_files)
+    return FileResponse(path=random_image, headers={"Content-Type": "image/jpeg"})
+
 
 if __name__ == "__main__":
     import uvicorn
