@@ -3,3 +3,5 @@ __pycache__
 keys.json
 uploads/*
 !uploads
+static/images/*
+!static/images

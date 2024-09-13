@@ -3,6 +3,7 @@ from middleware import verify_api_key, validate_file, handle_file_upload, rate_l
 from pathlib import Path
 from uuid import uuid4
 from datetime import datetime
+from fuzzywuzzy import process
 from fastapi import FastAPI, Depends, File, UploadFile, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -109,17 +110,21 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
     image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
 
+    if not image_files:
+        return JSONResponse(content={"error": "No images found"}, status_code=404)
+
     specific_file = None
 
     if file_name:
-        specific_file = image_dir / file_name
-        if specific_file in image_files:
-            image_files = [specific_file]
-        else:
-            specific_file = None
+        file_names = [file.name for file in image_files]
+        closest_match, _ = process.extractOne(file_name, file_names)
 
-    if not image_files:
-        return JSONResponse(content={"error": "No images found"}, status_code=404)
+        if closest_match:
+            specific_file = image_dir / closest_match
+            if specific_file in image_files:
+                image_files = [specific_file]
+            else:
+                specific_file = None
 
     selected_image = specific_file if specific_file else random.choice(
         image_files)
