@@ -3,11 +3,12 @@ from middleware import verify_api_key, validate_file, handle_file_upload, rate_l
 from pathlib import Path
 from uuid import uuid4
 from datetime import datetime
-from fastapi import FastAPI, Depends, File, UploadFile, Request
+from fastapi import FastAPI, Depends, File, UploadFile, Request, Query
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+import mimetypes
 import random
 import json
 import os
@@ -104,15 +105,31 @@ async def list_files(username: str = Depends(verify_api_key)):
 
 
 @app.get("/lol")
-async def get_random_image():
+async def get_image(file_name: str = Query(None, alias="file", description="Name of the file to retrieve")):
     image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
+
+    specific_file = None
+
+    if file_name:
+        specific_file = image_dir / file_name
+        if specific_file in image_files:
+            image_files = [specific_file]
+        else:
+            specific_file = None
 
     if not image_files:
         return JSONResponse(content={"error": "No images found"}, status_code=404)
 
-    random_image = random.choice(image_files)
-    return FileResponse(path=random_image, headers={"Content-Type": "image/jpeg"})
+    selected_image = specific_file if specific_file else random.choice(
+        image_files)
+
+    # Determine the content type
+    mime_type, _ = mimetypes.guess_type(selected_image)
+    if mime_type is None:
+        mime_type = "application/octet-stream"
+
+    return FileResponse(path=selected_image, headers={"Content-Type": mime_type})
 
 
 if __name__ == "__main__":
