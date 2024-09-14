@@ -8,13 +8,11 @@ from datetime import datetime, timedelta
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import RedirectResponse
 
-# Constants
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-RATE_LIMIT = 5  # Max number of requests
-RATE_LIMIT_TIME = timedelta(minutes=1)  # Time window for rate limiting
+RATE_LIMIT = 5
+RATE_LIMIT_TIME = timedelta(minutes=1)
 KEY_FILE = "keys.json"
 
-# Rate limiter dictionary
 rate_limiter = defaultdict(list)
 
 
@@ -30,7 +28,6 @@ keys = load_api_keys()
 def verify_api_key(authorization: str = Header(None)):
     if not authorization or authorization not in keys:
         raise HTTPException(status_code=401, detail="Invalid API Key")
-    # Return the username associated with the API key
     return keys[authorization]
 
 
@@ -38,7 +35,6 @@ def rate_limit(api_key: str):
     current_time = datetime.now()
     access_times = rate_limiter[api_key]
 
-    # Filter access times within the rate limit time window
     rate_limiter[api_key] = [t for t in access_times if t >
                              current_time - RATE_LIMIT_TIME]
 

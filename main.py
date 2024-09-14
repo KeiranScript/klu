@@ -129,12 +129,35 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
     selected_image = specific_file if specific_file else random.choice(
         image_files)
 
-    # Determine the content type
     mime_type, _ = mimetypes.guess_type(selected_image)
     if mime_type is None:
         mime_type = "application/octet-stream"
 
     return FileResponse(path=selected_image, headers={"Content-Type": mime_type})
+
+
+@app.get("/info")
+async def get_server_info():
+    upload_dir = Path(UPLOAD_DIR)
+    total_storage_used = sum(
+        f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
+    total_uploads = sum(1 for f in upload_dir.glob('**/*') if f.is_file())
+    total_users = sum(1 for d in upload_dir.iterdir() if d.is_dir())
+
+    def format_size(size_in_bytes):
+        if size_in_bytes >= 1024 ** 3:
+            return f"{size_in_bytes / (1024 ** 3):.2f} GB"
+        elif size_in_bytes >= 1024 ** 2:
+            return f"{size_in_bytes / (1024 ** 2):.2f} MB"
+        elif size_in_bytes >= 1024:
+            return f"{size_in_bytes / 1024:.2f} KB"
+        return f"{size_in_bytes} B"
+
+    return JSONResponse(content={
+        "storage_used": format_size(total_storage_used),
+        "uploads": total_uploads,
+        "users": total_users
+    })
 
 
 if __name__ == "__main__":
