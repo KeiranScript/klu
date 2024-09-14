@@ -42,7 +42,7 @@ def load_delete_map():
 
 def save_delete_map(delete_map):
     with open(DEL_FILE, 'w') as file:
-        json.dump(delete_map, file)
+        json.dump(delete_map, file, indent=4)
 
 
 templates = Jinja2Templates(directory="templates")
@@ -63,8 +63,13 @@ async def upload(file: UploadFile = File(...),
     delete_uuid = str(uuid4())
     delete_url = f"{BASE_URL}/delete/{delete_uuid}"
 
-    file_delete_map[delete_uuid] = str(file_path)
+    file_path_str = str(file_path.resolve())
+    file_delete_map[delete_uuid] = file_path_str
     save_delete_map(file_delete_map)
+
+    # Debug logging
+    print(f"DEBUG: Uploaded file {file_path.name} with delete_uuid: {
+          delete_uuid}, file_path: {file_path_str}")
 
     return JSONResponse(content={
         "file_url": file_url,
@@ -110,15 +115,14 @@ async def list_files(username: str = Depends(verify_api_key)):
         file_type = file_name.split('.')[-1] if '.' in file_name else "unknown"
 
         delete_uuid = next(
-            # Match absolute path
             (key for key, value in file_delete_map.items() if value == file_path_str), None)
 
         delete_url = f"{
             BASE_URL}/delete/{delete_uuid}" if delete_uuid else "N/A"
 
         # Debug logging
-        print(f"DEBUG: File {file_name} has delete_uuid: {
-              delete_uuid}, delete_url: {delete_url}")
+        print(f"DEBUG: Listing file {file_name} with file_path_str: {
+              file_path_str}, delete_uuid: {delete_uuid}, delete_url: {delete_url}")
 
         files.append({
             "file_name": file_name,
