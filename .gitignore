@@ -4,4 +4,4 @@ keys.json
 uploads/*
 !uploads
 static/images/*
-!static/images
+ecosystem.config.js
