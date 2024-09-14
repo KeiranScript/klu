@@ -2,7 +2,6 @@ import http.server
 import socketserver
 import http.client
 from urllib.parse import urlparse
-import io
 
 
 class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
