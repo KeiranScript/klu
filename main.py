@@ -97,29 +97,33 @@ async def list_files(username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
 
     if not user_dir.exists():
-        return JSONResponse(content={"error": "User directory not found"},
-                            status_code=404)
+        return JSONResponse(content={"error": "User directory not found"}, status_code=404)
 
     files = []
 
     for file_name in os.listdir(user_dir):
         file_path = user_dir / file_name
+        file_path_str = str(file_path.resolve())  # Ensure absolute path
         filesize = file_path.stat().st_size
         upload_time = datetime.fromtimestamp(
             file_path.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S')
         file_type = file_name.split('.')[-1] if '.' in file_name else "unknown"
 
         delete_uuid = next(
-            (key for key, value in file_delete_map.items()
-                if value == file_path), None)
+            # Match absolute path
+            (key for key, value in file_delete_map.items() if value == file_path_str), None)
+
         delete_url = f"{
             BASE_URL}/delete/{delete_uuid}" if delete_uuid else "N/A"
+
+        # Debug logging
+        print(f"DEBUG: File {file_name} has delete_uuid: {
+              delete_uuid}, delete_url: {delete_url}")
 
         files.append({
             "file_name": file_name,
             "file_url": f"{BASE_URL}/uploads/{username}/{file_name}",
-            "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2
-            else f"{filesize / 1024:.2f} KB",
+            "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2 else f"{filesize / 1024:.2f} KB",
             "file-type": file_type,
             "date-uploaded": upload_time,
             "delete_url": delete_url
