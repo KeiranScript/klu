@@ -67,10 +67,6 @@ async def upload(file: UploadFile = File(...),
     file_delete_map[delete_uuid] = file_path_str
     save_delete_map(file_delete_map)
 
-    # Debug logging
-    print(f"DEBUG: Uploaded file {file_path.name} with delete_uuid: {
-          delete_uuid}, file_path: {file_path_str}")
-
     return JSONResponse(content={
         "file_url": file_url,
         "file-size": f"{file_size / 1024**2:.2f} MB" if file_size >= 1024**2
