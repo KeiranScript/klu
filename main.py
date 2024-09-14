@@ -1,4 +1,6 @@
-from middleware import verify_api_key, validate_file, handle_file_upload, rate_limit, RedirectOn405Middleware
+from modules.middleware import (verify_api_key, validate_file,
+                                handle_file_upload, rate_limit,
+                                RedirectOn405Middleware)
 
 from pathlib import Path
 from uuid import uuid4
@@ -19,13 +21,10 @@ app = FastAPI()
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(RedirectOn405Middleware)
 
-KEY_FILE = "keys.json"
+KEY_FILE = "json/keys.json"
+DEL_FILE = "json/delete.json"
 UPLOAD_DIR = "uploads"
 BASE_URL = "https://kuuichi.xyz"
-
-file_delete_map = {}
-
-templates = Jinja2Templates(directory="templates")
 
 
 def load_api_keys():
@@ -34,6 +33,20 @@ def load_api_keys():
     return {entry['key']: entry['user'] for entry in data}
 
 
+def load_delete_map():
+    if os.path.exists(DEL_FILE):
+        with open(DEL_FILE, 'r') as file:
+            return json.load(file)
+    return {}
+
+
+def save_delete_map(delete_map):
+    with open(DEL_FILE, 'w') as file:
+        json.dump(delete_map, file)
+
+
+templates = Jinja2Templates(directory="templates")
+file_delete_map = load_delete_map()
 keys = load_api_keys()
 
 
@@ -49,7 +62,9 @@ async def upload(file: UploadFile = File(...),
 
     delete_uuid = str(uuid4())
     delete_url = f"{BASE_URL}/delete/{delete_uuid}"
-    file_delete_map[delete_uuid] = file_path
+
+    file_delete_map[delete_uuid] = str(file_path)
+    save_delete_map(file_delete_map)
 
     return JSONResponse(content={
         "file_url": file_url,
@@ -65,11 +80,16 @@ async def upload(file: UploadFile = File(...),
 async def delete_file(request: Request, delete_uuid: str):
     file_path = file_delete_map.pop(delete_uuid, None)
 
+    if file_path:
+        save_delete_map(file_delete_map)
+
     if not file_path or not os.path.exists(file_path):
-        return templates.TemplateResponse("file_not_found.html", {"request": request})
+        return templates.TemplateResponse("file_not_found.html",
+                                          {"request": request})
 
     os.remove(file_path)
-    return templates.TemplateResponse("file_deleted.html", {"request": request})
+    return templates.TemplateResponse("file_deleted.html",
+                                      {"request": request})
 
 
 @app.get("/files")
@@ -77,7 +97,8 @@ async def list_files(username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
 
     if not user_dir.exists():
-        return JSONResponse(content={"error": "User directory not found"}, status_code=404)
+        return JSONResponse(content={"error": "User directory not found"},
+                            status_code=404)
 
     files = []
 
@@ -89,14 +110,16 @@ async def list_files(username: str = Depends(verify_api_key)):
         file_type = file_name.split('.')[-1] if '.' in file_name else "unknown"
 
         delete_uuid = next(
-            (key for key, value in file_delete_map.items() if value == file_path), None)
+            (key for key, value in file_delete_map.items()
+                if value == file_path), None)
         delete_url = f"{
             BASE_URL}/delete/{delete_uuid}" if delete_uuid else "N/A"
 
         files.append({
             "file_name": file_name,
             "file_url": f"{BASE_URL}/uploads/{username}/{file_name}",
-            "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2 else f"{filesize / 1024:.2f} KB",
+            "file-size": f"{filesize / 1024**2:.2f} MB" if filesize >= 1024**2
+            else f"{filesize / 1024:.2f} KB",
             "file-type": file_type,
             "date-uploaded": upload_time,
             "delete_url": delete_url
@@ -106,12 +129,16 @@ async def list_files(username: str = Depends(verify_api_key)):
 
 
 @app.get("/lol")
-async def get_image(file_name: str = Query(None, alias="file", description="Name of the file to retrieve")):
+async def get_image(file_name: str = Query(None,
+                                           alias="file",
+                                           description="\
+                                           Name of the file to retrieve")):
     image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
 
     if not image_files:
-        return JSONResponse(content={"error": "No images found"}, status_code=404)
+        return JSONResponse(content={"error": "No images found"},
+                            status_code=404)
 
     specific_file = None
 
@@ -133,7 +160,8 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
     if mime_type is None:
         mime_type = "application/octet-stream"
 
-    return FileResponse(path=selected_image, headers={"Content-Type": mime_type})
+    return FileResponse(path=selected_image,
+                        headers={"Content-Type": mime_type})
 
 
 @app.get("/info")
