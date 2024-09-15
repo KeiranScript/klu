@@ -144,7 +144,10 @@ async def get_image(request: Request):
     selected_image = specific_file if specific_file else random.choice(
         image_files)
 
-    return FileResponse(path=selected_image, media_type=None)
+    mime_type, _ = mimetypes.guess_type(selected_image)
+    mime_type = mime_type or "application/octet-stream"
+
+    return FileResponse(path=selected_image, media_type=mime_type)
 
 
 @app.get("/info")
