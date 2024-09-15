@@ -135,7 +135,6 @@ async def get_image(request: Request):
         return JSONResponse(content={"error": "No images found"}, status_code=404)
 
     specific_file = None
-
     if query:
         file_names = [file.name for file in image_files]
         closest_match, _ = process.extractOne(query, file_names)
