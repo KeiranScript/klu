@@ -69,7 +69,9 @@ def validate_file(file: UploadFile):
 
 
 def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
-    file_extension = file.filename.split('.')[-1]
+    file_extension = file.filename.split('.')[-1].lower()
+
+    # Only generate a new name but keep the file extension the same
     random_filename = hashlib.sha256(str(time.time()).encode()).hexdigest()[
         :8] + f".{file_extension}"
 
@@ -77,11 +79,8 @@ def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
     user_dir.mkdir(parents=True, exist_ok=True)
 
     file_path = user_dir / random_filename
-
-    # Write the file in chunks to avoid issues with large files
     with open(file_path, "wb") as buffer:
-        while chunk := file.file.read(1024 * 1024):  # 1MB chunks
-            buffer.write(chunk)
+        buffer.write(file.file.read())
 
     file_size = file_path.stat().st_size
     upload_time = time.strftime("%d-%m-%Y %H:%M", time.localtime())

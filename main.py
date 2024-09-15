@@ -174,7 +174,7 @@ async def get_image(request: Request):
     selected_image = specific_file if specific_file else random.choice(
         image_files)
 
-    # Force MIME type to be 'image/gif' if it's a GIF file
+    # Force the MIME type to image/gif if the file is a GIF
     if selected_image.suffix.lower() == ".gif":
         mime_type = "image/gif"
     else:
@@ -190,7 +190,7 @@ async def get_image(request: Request):
         "Expires": "0"
     }
 
-    return FileResponse(path=selected_image, headers=headers)
+    return FileResponse(path=selected_image, headers=headers, media_type="image/gif")
 
 
 @app.get("/info")
