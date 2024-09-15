@@ -61,11 +61,12 @@ PORT = 443  # Change to 443 for HTTPS
 
 httpd = socketserver.TCPServer(("", PORT), ReverseProxyHTTPRequestHandler)
 
+# Create an SSL context
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+
 # Wrap the server socket with SSL
-httpd.socket = ssl.wrap_socket(httpd.socket,
-                               keyfile="server.key",
-                               certfile="server.crt",
-                               server_side=True)
+httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
 
 print(f"Serving at port {PORT} with SSL")
 httpd.serve_forever()
