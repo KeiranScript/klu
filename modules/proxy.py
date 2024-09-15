@@ -63,7 +63,8 @@ httpd = socketserver.TCPServer(("", PORT), ReverseProxyHTTPRequestHandler)
 
 # Create an SSL context
 context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.load_cert_chain(certfile=".ssl/server.crt", keyfile=".ssl/server.key")
+context.load_cert_chain(certfile="/etc/letsencrypt/live/kuuichi.xyz/fullchain.pem",
+                        keyfile="/etc/letsencrypt/live/kuuichi.xyz/privkey.pem")
 
 # Wrap the server socket with SSL
 httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
