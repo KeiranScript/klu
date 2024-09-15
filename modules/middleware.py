@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.responses import RedirectResponse
 
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
-RATE_LIMIT = 5
+RATE_LIMIT = 30
 RATE_LIMIT_TIME = timedelta(minutes=1)
 KEY_FILE = "json/keys.json"
 
