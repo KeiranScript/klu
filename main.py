@@ -18,6 +18,12 @@ from modules.middleware import (
     rate_limit, RedirectOn405Middleware
 )
 
+
+async def lifespan(app: FastAPI):
+    init_globals()
+    yield
+
+
 app = FastAPI(lifespan=lifespan)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.add_middleware(RedirectOn405Middleware)
@@ -56,11 +62,6 @@ def acquire_lock(file_name: str) -> Lock:
     if file_name not in file_locks:
         file_locks[file_name] = Lock()
     return file_locks[file_name]
-
-
-async def lifespan(app: FastAPI):
-    init_globals()
-    yield
 
 
 @app.post("/")
@@ -153,7 +154,9 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
 
 @app.get("/lol")
-async def get_image(file_name: str = Query(None, alias="file", description="Name of the file to retrieve")):
+async def get_image(request: Request):
+    query = list(request.query_params.keys())[
+        0] if request.query_params else None
     image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
 
@@ -162,9 +165,9 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
 
     specific_file = None
 
-    if file_name:
+    if query:
         file_names = [file.name for file in image_files]
-        closest_match, _ = process.extractOne(file_name, file_names)
+        closest_match, _ = process.extractOne(query, file_names)
         if closest_match:
             specific_file = image_dir / closest_match
 
@@ -173,7 +176,12 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
     mime_type, _ = mimetypes.guess_type(selected_image)
     mime_type = mime_type or "application/octet-stream"
 
-    return FileResponse(path=selected_image, headers={"Content-Type": mime_type})
+    headers = {
+        "Content-Type": mime_type,
+        "Content-Disposition": "inline"
+    }
+
+    return FileResponse(path=selected_image, headers=headers)
 
 
 @app.get("/info")
