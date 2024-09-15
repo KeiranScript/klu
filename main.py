@@ -25,8 +25,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.mount("/static/images", StaticFiles(directory="static/images"),
-          name="static_images")
 app.add_middleware(RedirectOn405Middleware)
 
 KEY_FILE = "json/keys.json"
@@ -128,23 +126,36 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
 @app.get("/lol")
 async def get_image(request: Request):
-    query = next(iter(request.query_params.keys()), None)
-    image_dir = Path("static/images")
+    query = list(request.query_params.keys())[
+        0] if request.query_params else None
+    image_dir = Path("uploads/images")
     image_files = list(image_dir.glob("*.*"))
+
     if not image_files:
         return JSONResponse(content={"error": "No images found"}, status_code=404)
 
-    specific_file = image_dir / process.extractOne(query, [file.name for file in image_files])[
-        0] if query else random.choice(image_files)
-    mime_type, _ = mimetypes.guess_type(specific_file)
+    specific_file = None
+
+    if query:
+        file_names = [file.name for file in image_files]
+        closest_match, _ = process.extractOne(query, file_names)
+        if closest_match:
+            specific_file = image_dir / closest_match
+
+    selected_image = specific_file if specific_file else random.choice(
+        image_files)
+    mime_type, _ = mimetypes.guess_type(selected_image)
     mime_type = mime_type or "application/octet-stream"
 
-    return FileResponse(
-        path=specific_file,
-        headers={"Content-Type": mime_type, "Content-Disposition": "inline",
-                 "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache", "Expires": "0"},
-        media_type="image/gif" if specific_file.suffix.lower() == ".gif" else mime_type
-    )
+    headers = {
+        "Content-Type": mime_type,
+        "Content-Disposition": "inline",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+    }
+
+    return FileResponse(path=selected_image, headers=headers, media_type=mime_type)
 
 
 @app.get("/info")
