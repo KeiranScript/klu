@@ -25,6 +25,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/static/images", StaticFiles(directory="static/images"),
+          name="static_images")
 app.add_middleware(RedirectOn405Middleware)
 
 KEY_FILE = "json/keys.json"
