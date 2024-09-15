@@ -2,6 +2,7 @@ import http.server
 import socketserver
 import http.client
 from urllib.parse import urlparse
+import ssl
 
 
 class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -56,8 +57,15 @@ class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         conn.close()
 
 
-PORT = 80
+PORT = 443  # Change to 443 for HTTPS
 
-with socketserver.TCPServer(("", PORT), ReverseProxyHTTPRequestHandler) as httpd:
-    print(f"Serving at port {PORT}")
-    httpd.serve_forever()
+httpd = socketserver.TCPServer(("", PORT), ReverseProxyHTTPRequestHandler)
+
+# Wrap the server socket with SSL
+httpd.socket = ssl.wrap_socket(httpd.socket,
+                               keyfile="server.key",
+                               certfile="server.crt",
+                               server_side=True)
+
+print(f"Serving at port {PORT} with SSL")
+httpd.serve_forever()
