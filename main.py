@@ -173,17 +173,19 @@ async def get_image(request: Request):
 
     selected_image = specific_file if specific_file else random.choice(
         image_files)
-    mime_type, _ = mimetypes.guess_type(selected_image)
-    mime_type = mime_type or "application/octet-stream"
 
-    # Ensure GIFs are treated properly
-    if selected_image.suffix == ".gif":
+    # Explicitly set the MIME type for GIFs
+    if selected_image.suffix.lower() == ".gif":
         mime_type = "image/gif"
+    else:
+        mime_type, _ = mimetypes.guess_type(selected_image)
+
+    mime_type = mime_type or "application/octet-stream"
 
     headers = {
         "Content-Type": mime_type,
         "Content-Disposition": "inline",
-        "Cache-Control": "no-cache, no-store, must-revalidate",  # Prevent caching issues
+        "Cache-Control": "no-cache, no-store, must-revalidate",
         "Pragma": "no-cache",
         "Expires": "0"
     }

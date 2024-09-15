@@ -77,8 +77,11 @@ def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
     user_dir.mkdir(parents=True, exist_ok=True)
 
     file_path = user_dir / random_filename
+
+    # Write the file in chunks to avoid issues with large files
     with open(file_path, "wb") as buffer:
-        buffer.write(file.file.read())
+        while chunk := file.file.read(1024 * 1024):  # 1MB chunks
+            buffer.write(chunk)
 
     file_size = file_path.stat().st_size
     upload_time = time.strftime("%d-%m-%Y %H:%M", time.localtime())
