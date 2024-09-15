@@ -174,7 +174,7 @@ async def get_image(request: Request):
     selected_image = specific_file if specific_file else random.choice(
         image_files)
 
-    # Explicitly set the MIME type for GIFs
+    # Force MIME type to be 'image/gif' if it's a GIF file
     if selected_image.suffix.lower() == ".gif":
         mime_type = "image/gif"
     else:
