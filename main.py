@@ -18,6 +18,17 @@ from modules.middleware import (
     rate_limit, RedirectOn405Middleware
 )
 
+
+async def lifespan(app: FastAPI):
+    init_globals()
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.add_middleware(RedirectOn405Middleware)
+
+
 KEY_FILE = "json/keys.json"
 DEL_FILE = "json/delete.json"
 UPLOAD_DIR = "uploads"
@@ -30,7 +41,6 @@ file_locks = {}
 
 
 def load_json(file_path: str):
-    """Utility function to load JSON data from a file."""
     if os.path.exists(file_path):
         with open(file_path, 'r') as file:
             return json.load(file)
@@ -38,34 +48,20 @@ def load_json(file_path: str):
 
 
 def save_json(file_path: str, data):
-    """Utility function to save JSON data to a file."""
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=4)
 
 
 def init_globals():
-    """Initialize global variables."""
     global file_delete_map, keys
     file_delete_map = load_json(DEL_FILE)
     keys = {entry['key']: entry['user'] for entry in load_json(KEY_FILE)}
 
 
 def acquire_lock(file_name: str) -> Lock:
-    """Acquire a lock for a specific file."""
     if file_name not in file_locks:
         file_locks[file_name] = Lock()
     return file_locks[file_name]
-
-
-async def lifespan(app: FastAPI):
-    """Initialize globals on startup and cleanup on shutdown."""
-    init_globals()
-    yield
-    # Cleanup code can be added here if needed
-
-app = FastAPI(lifespan=lifespan)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.add_middleware(RedirectOn405Middleware)
 
 
 @app.post("/")
@@ -97,7 +93,6 @@ async def upload(file: UploadFile = File(...),
 
 
 def format_file_size(size_in_bytes: int) -> str:
-    """Format file size into a human-readable string."""
     if size_in_bytes >= 1024**2:
         return f"{size_in_bytes / 1024**2:.2f} MB"
     return f"{size_in_bytes / 1024:.2f} KB"
@@ -159,7 +154,9 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
 
 @app.get("/lol")
-async def get_image(file_name: str = Query(None, alias="file", description="Name of the file to retrieve")):
+async def get_image(request: Request):
+    query = list(request.query_params.keys())[
+        0] if request.query_params else None
     image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
 
@@ -168,9 +165,9 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
 
     specific_file = None
 
-    if file_name:
+    if query:
         file_names = [file.name for file in image_files]
-        closest_match, _ = process.extractOne(file_name, file_names)
+        closest_match, _ = process.extractOne(query, file_names)
         if closest_match:
             specific_file = image_dir / closest_match
 
@@ -179,7 +176,12 @@ async def get_image(file_name: str = Query(None, alias="file", description="Name
     mime_type, _ = mimetypes.guess_type(selected_image)
     mime_type = mime_type or "application/octet-stream"
 
-    return FileResponse(path=selected_image, headers={"Content-Type": mime_type})
+    headers = {
+        "Content-Type": mime_type,
+        "Content-Disposition": "inline"
+    }
+
+    return FileResponse(path=selected_image, headers=headers)
 
 
 @app.get("/info")
@@ -210,7 +212,6 @@ async def get_analytics():
 
 
 def format_size(size_in_bytes: int) -> str:
-    """Format size into a human-readable string."""
     if size_in_bytes >= 1024**3:
         return f"{size_in_bytes / 1024**3:.2f} GB"
     if size_in_bytes >= 1024**2:
