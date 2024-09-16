@@ -1,7 +1,7 @@
 from pathlib import Path
 from uuid import uuid4
 from datetime import datetime
-from fuzzywuzzy import process
+from rapidfuzz import process
 from fastapi import FastAPI, Depends, File, UploadFile, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -18,12 +18,8 @@ from modules.middleware import (
     rate_limit
 )
 
+app = FastAPI()
 
-async def lifespan(app: FastAPI):
-    init_globals()
-    yield
-
-app = FastAPI(lifespan=lifespan)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 KEY_FILE = "json/keys.json"
@@ -32,28 +28,35 @@ UPLOAD_DIR = "uploads"
 BASE_URL = "https://kuuichi.xyz"
 
 templates = Jinja2Templates(directory="templates")
-file_delete_map, keys, file_locks = {}, {}, {}
-
+file_delete_map = {}
+keys = {}
+file_locks = {}
 
 def load_json(file_path: str):
     return json.load(open(file_path)) if os.path.exists(file_path) else {}
 
-
 def save_json(file_path: str, data):
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=4)
-
 
 def init_globals():
     global file_delete_map, keys
     file_delete_map = load_json(DEL_FILE)
     keys = {entry['key']: entry['user'] for entry in load_json(KEY_FILE)}
 
+init_globals()
 
 def acquire_lock(file_name: str) -> Lock:
     if file_name not in file_locks:
         file_locks[file_name] = Lock()
     return file_locks[file_name]
+
+def format_file_size(size_in_bytes: int) -> str:
+    return f"{size_in_bytes / 1024**2:.2f} MB" if size_in_bytes >= 1024**2 else f"{size_in_bytes / 1024:.2f} KB"
+
+@app.get("/ohhq")
+async def ohhq():
+    return RedirectResponse(url='https://ohhq.gay', status_code=301)
 
 
 @app.post("/")
@@ -61,8 +64,7 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
     with acquire_lock(file.filename):
         rate_limit(username)
         validate_file(file)
-        file_path, file_size, file_type, upload_time = handle_file_upload(
-            file, username, UPLOAD_DIR)
+        file_path, file_size, file_type, upload_time = handle_file_upload(file, username, UPLOAD_DIR)
 
         delete_uuid = str(uuid4())
         file_delete_map[delete_uuid] = str(file_path.resolve())
@@ -76,11 +78,6 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
             "delete_url": f"{BASE_URL}/delete/{delete_uuid}"
         })
 
-
-def format_file_size(size_in_bytes: int) -> str:
-    return f"{size_in_bytes / 1024**2:.2f} MB" if size_in_bytes >= 1024**2 else f"{size_in_bytes / 1024:.2f} KB"
-
-
 @app.get("/delete/{delete_uuid}")
 async def delete_file(request: Request, delete_uuid: str):
     file_path = file_delete_map.pop(delete_uuid, None)
@@ -89,7 +86,6 @@ async def delete_file(request: Request, delete_uuid: str):
         return templates.TemplateResponse("file_not_found.html", {"request": request})
     os.remove(file_path)
     return templates.TemplateResponse("file_deleted.html", {"request": request})
-
 
 @app.get("/files")
 async def list_files(username: str = Depends(verify_api_key)):
@@ -108,7 +104,6 @@ async def list_files(username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"files": files})
 
-
 @app.get("/search")
 async def search_files(query: str, username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
@@ -118,15 +113,17 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
     file_names = [f.name for f in user_dir.glob("*") if f.is_file()]
     matches = process.extract(query, file_names, limit=10)
 
-    results = [{"file_name": match, "file_url": f"{
-        BASE_URL}/uploads/{username}/{match}", "score": score} for match, score in matches]
-    return JSONResponse(content={"results": results})
+    results = [{
+        "file_name": match[0],
+        "file_url": f"{BASE_URL}/uploads/{username}/{match[0]}",
+        "score": match[1]
+    } for match in matches]
 
+    return JSONResponse(content={"results": results})
 
 @app.get("/lol")
 async def get_image(request: Request):
-    query = list(request.query_params.keys())[
-        0] if request.query_params else None
+    query = list(request.query_params.keys())[0] if request.query_params else None
     image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
 
@@ -140,14 +137,10 @@ async def get_image(request: Request):
         if closest_match:
             specific_file = image_dir / closest_match
 
-    selected_image = specific_file if specific_file else random.choice(
-        image_files)
+    selected_image = specific_file if specific_file else random.choice(image_files)
 
-    if selected_image.suffix.lower() == '.gif':
-        mime_type = 'image/gif'
-    else:
-        mime_type, _ = mimetypes.guess_type(selected_image)
-        mime_type = mime_type or "application/octet-stream"
+    mime_type, _ = mimetypes.guess_type(selected_image)
+    mime_type = mime_type or "application/octet-stream"
 
     headers = {
         "Content-Disposition": "inline",
@@ -158,12 +151,10 @@ async def get_image(request: Request):
 
     return FileResponse(path=selected_image, media_type=mime_type, headers=headers)
 
-
 @app.get("/info")
 async def get_server_info():
     upload_dir = Path(UPLOAD_DIR)
-    total_storage_used = sum(
-        f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
+    total_storage_used = sum(f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
     total_uploads = sum(1 for _ in upload_dir.glob('**/*') if _.is_file())
     total_users = sum(1 for _ in upload_dir.iterdir() if _.is_dir())
 
@@ -172,7 +163,6 @@ async def get_server_info():
         "uploads": total_uploads,
         "users": total_users
     })
-
 
 @app.get("/analytics")
 async def get_analytics():
@@ -185,7 +175,6 @@ async def get_analytics():
         "user_uploads": dict(user_uploads)
     })
 
-
 def format_size(size_in_bytes: int) -> str:
     if size_in_bytes >= 1024**3:
         return f"{size_in_bytes / 1024**3:.2f} GB"
@@ -194,39 +183,6 @@ def format_size(size_in_bytes: int) -> str:
     if size_in_bytes >= 1024:
         return f"{size_in_bytes / 1024:.2f} KB"
     return f"{size_in_bytes} B"
-
-
-@app.get("/file_info")
-async def get_file_info(filename: str, username: str = Depends(verify_api_key)):
-    user_dir = Path(UPLOAD_DIR) / username
-    if not user_dir.exists():
-        raise HTTPException(status_code=404, detail="User directory not found")
-
-    file_path = user_dir / filename
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail="File not found")
-
-    file_size = file_path.stat().st_size
-    upload_time = datetime.fromtimestamp(
-        file_path.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S')
-
-    delete_uuid = next((key for key, value in file_delete_map.items(
-    ) if value == str(file_path.resolve())), None)
-    delete_url = f"{BASE_URL}/delete/{delete_uuid}" if delete_uuid else "N/A"
-
-    return JSONResponse(content={
-        "file_name": filename,
-        "file_url": f"{BASE_URL}/uploads/{username}/{filename}",
-        "file-size": f"{file_size / 1024**2:.2f} MB" if file_size >= 1024**2 else f"{file_size / 1024:.2f} KB",
-        "file-type": filename.split('.')[-1] if '.' in filename else "unknown",
-        "date-uploaded": upload_time,
-        "delete_url": delete_url
-    })
-
-
-@app.get("/ohhq")
-async def ohhq():
-    return RedirectResponse(url='https://ohhq.gay', status_code=301)
 
 
 if __name__ == "__main__":
