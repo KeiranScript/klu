@@ -3,7 +3,7 @@ from uuid import uuid4
 from datetime import datetime
 from fuzzywuzzy import process
 from fastapi import FastAPI, Depends, File, UploadFile, Request, HTTPException
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from threading import Lock
@@ -222,6 +222,11 @@ async def get_file_info(filename: str, username: str = Depends(verify_api_key)):
         "date-uploaded": upload_time,
         "delete_url": delete_url
     })
+
+
+@app.get("/ohhq")
+async def ohhq():
+    return RedirectResponse(url='https://ohhq.gay', status_code=301)
 
 
 if __name__ == "__main__":
