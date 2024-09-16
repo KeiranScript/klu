@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from threading import Lock
 from collections import Counter
+import httpx
 import mimetypes
 import random
 import json
@@ -224,38 +225,6 @@ async def get_file_info(filename: str, username: str = Depends(verify_api_key)):
         "delete_url": delete_url
     })
 
-
-@app.get("/anime/{tag}")
-async def get_anime(tag: str, request: Request):
-    anime_dir = Path(f"static/images/anime/{tag}")
-
-    if not anime_dir.exists():
-        return JSONResponse(content={"error": "No images found"}, status_code=404)
-
-    query = request.args.get("query")
-    if query:
-        file_names = [f.name for f in anime_dir.glob('**/*') if f.is_file()]
-        closest_match, _ = process.extractOne(query, file_names)
-        if closest_match:
-            return FileResponse(path=anime_dir / closest_match)
-
-    image_files = [f for f in anime_dir.glob('**/*') if f.is_file()]
-    selected_image = random.choice(image_files)
-
-    if selected_image.suffix.lower() == '.gif':
-        mime_type = 'image/gif'
-    else:
-        mime_type, _ = mimetypes.guess_type(selected_image)
-        mime_type = mime_type or "application/octet-stream"
-
-    headers = {
-        "Content-Disposition": "inline",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-    }
-
-    return FileResponse(path=selected_image, media_type=mime_type, headers=headers)
 
 if __name__ == "__main__":
     import uvicorn
