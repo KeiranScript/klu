@@ -133,7 +133,7 @@ async def get_image(request: Request):
     specific_file = None
     if query:
         file_names = [file.name for file in image_files]
-        closest_match, _ = process.extractOne(query, file_names)
+        closest_match, score, _ = process.extractOne(query, file_names)
         if closest_match:
             specific_file = image_dir / closest_match
 
