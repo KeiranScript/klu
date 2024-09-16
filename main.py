@@ -8,7 +8,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from threading import Lock
 from collections import Counter
-import httpx
 import mimetypes
 import random
 import json
@@ -16,7 +15,7 @@ import os
 
 from modules.middleware import (
     verify_api_key, validate_file, handle_file_upload,
-    rate_limit, RedirectOn405Middleware
+    rate_limit
 )
 
 
@@ -26,7 +25,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.add_middleware(RedirectOn405Middleware)
+app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
 KEY_FILE = "json/keys.json"
 DEL_FILE = "json/delete.json"

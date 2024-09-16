@@ -86,11 +86,3 @@ def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
     upload_time = time.strftime("%d-%m-%Y %H:%M", time.localtime())
 
     return file_path, file_size, file.content_type.split("/")[-1], upload_time
-
-
-class RedirectOn405Middleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
-        response = await call_next(request)
-        if response.status_code == 405:
-            return RedirectResponse(url="/docs")
-        return response
