@@ -25,7 +25,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
 
 KEY_FILE = "json/keys.json"
 DEL_FILE = "json/delete.json"
