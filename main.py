@@ -2,13 +2,12 @@ from pathlib import Path
 from uuid import uuid4
 from datetime import datetime
 from rapidfuzz import process
-from fastapi import FastAPI, Depends, File, UploadFile, Request, HTTPException
-from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
+from fastapi import FastAPI, Depends, File, UploadFile, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from threading import Lock
 from collections import Counter
-import mimetypes
 import random
 import json
 import os
@@ -26,6 +25,7 @@ KEY_FILE = "json/keys.json"
 DEL_FILE = "json/delete.json"
 UPLOAD_DIR = "uploads"
 BASE_URL = "https://kuuichi.xyz"
+ZOE_VIEWS_FILE = "json/zoe_views.json"
 
 templates = Jinja2Templates(directory="templates")
 file_delete_map = {}
@@ -121,35 +121,31 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"results": results})
 
-@app.get("/lol")
-async def get_image(request: Request):
-    query = list(request.query_params.keys())[0] if request.query_params else None
-    image_dir = Path("static/images")
-    image_files = list(image_dir.glob("*.*"))
+def load_zoe_views() -> int:
+    if os.path.exists(ZOE_VIEWS_FILE):
+        with open(ZOE_VIEWS_FILE, 'r') as file:
+            return json.load(file).get("zoe_views", 0)
+    return 0
 
-    if not image_files:
-        return JSONResponse(content={"error": "No images found"}, status_code=404)
+def save_zoe_views(views: int):
+    with open(ZOE_VIEWS_FILE, 'w') as file:
+        json.dump({"zoe_views": views}, file, indent=4)
 
-    specific_file = None
-    if query:
-        file_names = [file.name for file in image_files]
-        closest_match, score, _ = process.extractOne(query, file_names)
-        if closest_match:
-            specific_file = image_dir / closest_match
+zoe_views = load_zoe_views()
 
-    selected_image = specific_file if specific_file else random.choice(image_files)
+@app.get("/zoe")
+async def serve_random_zoe_file():
+    global zoe_views
+    zoe_dir = Path("static/zoe")
 
-    mime_type, _ = mimetypes.guess_type(selected_image)
-    mime_type = mime_type or "application/octet-stream"
+    if not zoe_dir.exists() or not any(zoe_dir.iterdir()):
+        return JSONResponse(content={"error": "No files found in the /static/zoe directory"}, status_code=404)
 
-    headers = {
-        "Content-Disposition": "inline",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        "Pragma": "no-cache",
-        "Expires": "0"
-    }
+    random_file = random.choice([f for f in zoe_dir.iterdir() if f.is_file()])
+    zoe_views += 1
+    save_zoe_views(zoe_views)
 
-    return FileResponse(path=selected_image, media_type=mime_type, headers=headers)
+    return RedirectResponse(url=f"/static/zoe/{random_file.name}", status_code=302)
 
 @app.get("/info")
 async def get_server_info():
@@ -161,7 +157,8 @@ async def get_server_info():
     return JSONResponse(content={
         "storage_used": format_size(total_storage_used),
         "uploads": total_uploads,
-        "users": total_users
+        "users": total_users,
+        "zoe_views": zoe_views  # Include the counter here
     })
 
 @app.get("/analytics")
