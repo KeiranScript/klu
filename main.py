@@ -20,6 +20,7 @@ from modules.middleware import (
 app = FastAPI()
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/static/zoe", StaticFiles(directory="static/zoe"), name="zoe")
 
 KEY_FILE = "json/keys.json"
 DEL_FILE = "json/delete.json"
