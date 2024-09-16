@@ -128,7 +128,7 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 async def get_image(request: Request):
     query = list(request.query_params.keys())[
         0] if request.query_params else None
-    image_dir = Path("uploads/images")
+    image_dir = Path("static/images")
     image_files = list(image_dir.glob("*.*"))
 
     if not image_files:
@@ -144,15 +144,12 @@ async def get_image(request: Request):
     selected_image = specific_file if specific_file else random.choice(
         image_files)
 
-    # Force MIME type for GIF files
     if selected_image.suffix.lower() == '.gif':
         mime_type = 'image/gif'
     else:
         mime_type, _ = mimetypes.guess_type(selected_image)
-        # Fallback if MIME type is not found
         mime_type = mime_type or "application/octet-stream"
 
-    # Set the content headers
     headers = {
         "Content-Disposition": "inline",
         "Cache-Control": "no-cache, no-store, must-revalidate",
