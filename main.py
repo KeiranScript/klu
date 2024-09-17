@@ -141,7 +141,7 @@ async def list_files(username: str = Depends(verify_api_key)):
 
     files = [{
         "file_name": file.name,
-        "file_url": f"{BASE_URL}/uploads/{user_dir.name}/{file.name}",
+        "file_url": f"{BASE_URL}/uploads/{username}/{file.name}",
         "file-size": format_file_size(file.stat().st_size),
         "file-type": file.suffix[1:] if file.suffix else "unknown",
         "date-uploaded": datetime.fromtimestamp(file.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S'),
