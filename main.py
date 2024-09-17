@@ -141,7 +141,7 @@ async def list_files(username: str = Depends(verify_api_key)):
 
     files = [{
         "file_name": file.name,
-        "file_url": f"{BASE_URL}/uploads/{username}/{file.name}",
+        "file_url": f"{BASE_URL}/uploads/{user_dir.name}/{file.name}",
         "file-size": format_file_size(file.stat().st_size),
         "file-type": file.suffix[1:] if file.suffix else "unknown",
         "date-uploaded": datetime.fromtimestamp(file.stat().st_ctime).strftime('%Y-%m-%d %H:%M:%S'),
@@ -157,7 +157,7 @@ async def serve_file(generated_filename: str):
     if not original_file_path or not os.path.exists(original_file_path):
         return JSONResponse(content={"error": "File not found"}, status_code=404)
     
-    return RedirectResponse(url=f"{BASE_URL}/uploads/{original_file_path.parent.name}/{original_file_path.name}")
+    return RedirectResponse(url=f"{BASE_URL}/{original_file_path.parent.name}/{original_file_path.name}")
 
 @app.get("/search")
 async def search_files(query: str, username: str = Depends(verify_api_key)):
