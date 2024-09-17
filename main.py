@@ -150,7 +150,7 @@ async def list_files(username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"files": files})
 
-@app.get("/files/{generated_filename}")
+@app.get("/{generated_filename}")
 async def serve_file(generated_filename: str):
     original_file_path = file_name_map.get(generated_filename)
 
