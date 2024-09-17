@@ -1,13 +1,15 @@
-from pathlib import Path
-from uuid import uuid4
-from datetime import datetime
-from rapidfuzz import process
 from fastapi import FastAPI, Depends, File, UploadFile, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from threading import Lock
+from fastapi.staticfiles import StaticFiles
 from collections import Counter
+from datetime import datetime
+from rapidfuzz import process
+from threading import Lock
+from pathlib import Path
+from uuid import uuid4
+
+import string
 import random
 import json
 import os
@@ -30,6 +32,7 @@ ZOE_VIEWS_FILE = "json/zoe_views.json"
 
 templates = Jinja2Templates(directory="templates")
 file_delete_map = {}
+file_name_map = {}
 keys = {}
 file_locks = {}
 
@@ -45,8 +48,6 @@ def init_globals():
     file_delete_map = load_json(DEL_FILE)
     keys = {entry['key']: entry['user'] for entry in load_json(KEY_FILE)}
 
-init_globals()
-
 def acquire_lock(file_name: str) -> Lock:
     if file_name not in file_locks:
         file_locks[file_name] = Lock()
@@ -55,32 +56,73 @@ def acquire_lock(file_name: str) -> Lock:
 def format_file_size(size_in_bytes: int) -> str:
     return f"{size_in_bytes / 1024**2:.2f} MB" if size_in_bytes >= 1024**2 else f"{size_in_bytes / 1024:.2f} KB"
 
+def load_zoe_views() -> int:
+    if os.path.exists(ZOE_VIEWS_FILE):
+        with open(ZOE_VIEWS_FILE, 'r') as file:
+            return json.load(file).get("zoe_views", 0)
+    return 0
+
+def save_zoe_views(views: int):
+    with open(ZOE_VIEWS_FILE, 'w') as file:
+        json.dump({"zoe_views": views}, file, indent=4)
+
+def format_size(size_in_bytes: int) -> str:
+    if size_in_bytes >= 1024**3:
+        return f"{size_in_bytes / 1024**3:.2f} GB"
+    if size_in_bytes >= 1024**2:
+        return f"{size_in_bytes / 1024**2:.2f} MB"
+    if size_in_bytes >= 1024:
+        return f"{size_in_bytes / 1024:.2f} KB"
+    return f"{size_in_bytes} B"
+
+def generate_random_filename(length=8) -> str:
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+zoe_views = load_zoe_views()
+init_globals()
+
 @app.get("/ohhq")
 async def ohhq():
     return RedirectResponse(url='https://ohhq.gay', status_code=301)
-
 
 @app.post("/")
 async def upload(file: UploadFile = File(...), username: str = Depends(verify_api_key)):
     request: Request = Request()
     if request.method != "POST":
         return RedirectResponse(url='https://e-z.bio/kc', status_code=301)
+    
     with acquire_lock(file.filename):
         rate_limit(username)
         validate_file(file)
         file_path, file_size, file_type, upload_time = handle_file_upload(file, username, UPLOAD_DIR)
-
+        generated_name = generate_random_filename()
+        file_name_map[f"{generated_name}{file_path.suffix}"] = file_path
         delete_uuid = str(uuid4())
         file_delete_map[delete_uuid] = str(file_path.resolve())
         save_json(DEL_FILE, file_delete_map)
 
         return JSONResponse(content={
-            "file_url": f"{BASE_URL}/uploads/{username}/{file_path.name}",
+            "file_url": f"{BASE_URL}/files/{generated_name}{file_path.suffix}",
             "file-size": format_file_size(file_size),
             "file-type": file_type,
             "date-uploaded": upload_time,
             "delete_url": f"{BASE_URL}/delete/{delete_uuid}"
         })
+
+@app.get("/uploads/{username}/{file_name}")
+async def serve_embed(username: str, file_name: str):
+    file_path = Path(UPLOAD_DIR) / username / file_name
+    if not file_path.exists():
+        return JSONResponse(content={"error": "File not found"}, status_code=404)
+
+    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
+
+    return templates.TemplateResponse("embed.html", {
+        "file_name": file_name,
+        "file_url": file_url,
+        "username": username
+    })
+
 
 @app.get("/delete/{delete_uuid}")
 async def delete_file(request: Request, delete_uuid: str):
@@ -108,6 +150,15 @@ async def list_files(username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"files": files})
 
+@app.get("/files/{generated_filename}")
+async def serve_file(generated_filename: str):
+    original_file_path = file_name_map.get(generated_filename)
+
+    if not original_file_path or not os.path.exists(original_file_path):
+        return JSONResponse(content={"error": "File not found"}, status_code=404)
+    
+    return RedirectResponse(url=f"{BASE_URL}/uploads/{original_file_path.parent.name}/{original_file_path.name}")
+
 @app.get("/search")
 async def search_files(query: str, username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
@@ -125,17 +176,7 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"results": results})
 
-def load_zoe_views() -> int:
-    if os.path.exists(ZOE_VIEWS_FILE):
-        with open(ZOE_VIEWS_FILE, 'r') as file:
-            return json.load(file).get("zoe_views", 0)
-    return 0
 
-def save_zoe_views(views: int):
-    with open(ZOE_VIEWS_FILE, 'w') as file:
-        json.dump({"zoe_views": views}, file, indent=4)
-
-zoe_views = load_zoe_views()
 
 @app.get("/zoe")
 async def serve_random_zoe_file():
@@ -162,28 +203,21 @@ async def get_server_info():
         "storage_used": format_size(total_storage_used),
         "uploads": total_uploads,
         "users": total_users,
-        "zoe_views": zoe_views  # Include the counter here
+        "zoe_views": zoe_views
     })
 
-@app.get("/analytics")
+@app.get("/lb")
 async def get_analytics():
     upload_files = [f for f in Path(UPLOAD_DIR).glob('**/*') if f.is_file()]
-    file_types = Counter(f.suffix for f in upload_files)
     user_uploads = Counter(f.parent.name for f in upload_files)
 
-    return JSONResponse(content={
-        "file_types": dict(file_types),
-        "user_uploads": dict(user_uploads)
-    })
+    zoe_files = [f for f in Path("static/zoe").glob('**/*') if f.is_file()]
+    zoe_views = sum(1 for _ in zoe_files)
 
-def format_size(size_in_bytes: int) -> str:
-    if size_in_bytes >= 1024**3:
-        return f"{size_in_bytes / 1024**3:.2f} GB"
-    if size_in_bytes >= 1024**2:
-        return f"{size_in_bytes / 1024**2:.2f} MB"
-    if size_in_bytes >= 1024:
-        return f"{size_in_bytes / 1024:.2f} KB"
-    return f"{size_in_bytes} B"
+    return JSONResponse(content={
+        "user_uploads": dict(user_uploads),
+        "zoe_views": zoe_views
+    })
 
 
 if __name__ == "__main__":
