@@ -87,9 +87,9 @@ async def ohhq():
 
 @app.post("/")
 async def upload(file: UploadFile = File(...), username: str = Depends(verify_api_key)):
-    request: Request = Request()
-    if request.method != "POST":
-        return RedirectResponse(url='https://e-z.bio/kc', status_code=301)
+    # request: Request = Request(scope={"type": "http"})
+    # if request.method != "POST":
+    #     return RedirectResponse(url='https://e-z.bio/kc', status_code=301)
     
     with acquire_lock(file.filename):
         rate_limit(username)
