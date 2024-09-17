@@ -110,7 +110,7 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         })
 
 @app.get("/uploads/{username}/{file_name}")
-async def serve_embed(username: str, file_name: str):
+async def serve_embed(request: Request, username: str, file_name: str):
     file_path = Path(UPLOAD_DIR) / username / file_name
     if not file_path.exists():
         return JSONResponse(content={"error": "File not found"}, status_code=404)
@@ -118,11 +118,11 @@ async def serve_embed(username: str, file_name: str):
     file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
 
     return templates.TemplateResponse("embed.html", {
+        "request": request,
         "file_name": file_name,
         "file_url": file_url,
         "username": username
     })
-
 
 @app.get("/delete/{delete_uuid}")
 async def delete_file(request: Request, delete_uuid: str):
