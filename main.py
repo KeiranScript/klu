@@ -128,9 +128,15 @@ async def serve_embed(request: Request, username: str, file_name: str):
 async def delete_file(request: Request, delete_uuid: str):
     file_path = file_delete_map.pop(delete_uuid, None)
     save_json(DEL_FILE, file_delete_map)
+
     if not file_path or not os.path.exists(file_path):
         return templates.TemplateResponse("file_not_found.html", {"request": request})
-    os.remove(file_path)
+    
+    try:
+        os.remove(file_path)
+    except OSError as e:
+        return JSONResponse(content={"error": f"Failed to delete file: {str(e)}"}, status_code=500)
+    
     return templates.TemplateResponse("file_deleted.html", {"request": request})
 
 @app.get("/files")
@@ -151,13 +157,14 @@ async def list_files(username: str = Depends(verify_api_key)):
     return JSONResponse(content={"files": files})
 
 @app.get("/{generated_filename}")
-async def serve_file(generated_filename: str):
+async def serve_file(request: Request, generated_filename: str):
     original_file_path = file_name_map.get(generated_filename)
 
     if not original_file_path or not os.path.exists(original_file_path):
         return JSONResponse(content={"error": "File not found"}, status_code=404)
     
-    return RedirectResponse(url=f"{BASE_URL}/{original_file_path.parent.name}/{original_file_path.name}")
+    file_url = request.url_for('serve_file', generated_filename=generated_filename)
+    return RedirectResponse(url=file_url)
 
 @app.get("/search")
 async def search_files(query: str, username: str = Depends(verify_api_key)):
