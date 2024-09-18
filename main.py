@@ -87,16 +87,17 @@ async def ohhq():
 
 @app.post("/")
 async def upload(file: UploadFile = File(...), username: str = Depends(verify_api_key)):
-    # request: Request = Request(scope={"type": "http"})
-    # if request.method != "POST":
-    #     return RedirectResponse(url='https://e-z.bio/kc', status_code=301)
-    
     with acquire_lock(file.filename):
         rate_limit(username)
         validate_file(file)
         file_path, file_size, file_type, upload_time = handle_file_upload(file, username, UPLOAD_DIR)
         generated_name = generate_random_filename()
-        file_name_map[f"{generated_name}{file_path.suffix}"] = file_path
+        full_file_path = Path(UPLOAD_DIR) / f"{generated_name}{file_path.suffix}"
+
+        if not full_file_path.exists():
+            return JSONResponse(content={"error": "File could not be found after upload"}, status_code=500)
+        
+        file_name_map[generated_name] = file_path
         delete_uuid = str(uuid4())
         file_delete_map[delete_uuid] = str(file_path.resolve())
         save_json(DEL_FILE, file_delete_map)
@@ -108,6 +109,7 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
             "date-uploaded": upload_time,
             "delete_url": f"{BASE_URL}/delete/{delete_uuid}"
         })
+
 
 @app.get("/uploads/{username}/{file_name}")
 async def serve_embed(request: Request, username: str, file_name: str):
@@ -157,13 +159,14 @@ async def list_files(username: str = Depends(verify_api_key)):
     return JSONResponse(content={"files": files})
 
 @app.get("/{generated_filename}")
-async def serve_file(request: Request, generated_filename: str):
+async def serve_file(generated_filename: str):
     original_file_path = file_name_map.get(generated_filename)
 
     if not original_file_path or not os.path.exists(original_file_path):
         return JSONResponse(content={"error": "File not found"}, status_code=404)
     
-    file_url = request.url_for('serve_file', generated_filename=generated_filename)
+    file_url = f"{BASE_URL}/uploads/{original_file_path.name}"
+
     return RedirectResponse(url=file_url)
 
 @app.get("/search")
