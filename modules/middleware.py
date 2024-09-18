@@ -70,19 +70,27 @@ def validate_file(file: UploadFile):
 
 def handle_file_upload(file: UploadFile, username: str, upload_dir: str):
     file_extension = file.filename.split('.')[-1].lower()
-
-    # Only generate a new name but keep the file extension the same
-    random_filename = hashlib.sha256(str(time.time()).encode()).hexdigest()[
-        :8] + f".{file_extension}"
-
+    random_filename = hashlib.sha256(f"{time.time()}".encode()).hexdigest()[:8] + f".{file_extension}"
     user_dir = Path(upload_dir) / username
     user_dir.mkdir(parents=True, exist_ok=True)
-
     file_path = user_dir / random_filename
-    with open(file_path, "wb") as buffer:
-        buffer.write(file.file.read())
+
+    try:
+        with file_path.open("wb") as buffer:
+            buffer.write(file.file.read())
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error saving file: {str(e)}"
+        )
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File was not created successfully."
+        )
 
     file_size = file_path.stat().st_size
-    upload_time = time.strftime("%d-%m-%Y %H:%M", time.localtime())
+    upload_time = datetime.now().strftime("%d-%m-%Y %H:%M")
 
     return file_path, file_size, file.content_type.split("/")[-1], upload_time
