@@ -102,7 +102,7 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         save_json(DEL_FILE, file_delete_map)
 
         return JSONResponse(content={
-            "file_url": f"{BASE_URL}/files/{generated_name}{file_path.suffix}",
+            "file_url": f"{BASE_URL}/{generated_name}{file_path.suffix}",
             "file-size": format_file_size(file_size),
             "file-type": file_type,
             "date-uploaded": upload_time,
