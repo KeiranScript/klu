@@ -21,13 +21,13 @@
     margin-left: auto;
     margin-right: auto;
     padding: 2rem;
-    max-width: 35rem; /* Increased from 28rem to 48rem */
+    max-width: 20rem; /* Increased from 28rem to 48rem */
     width: 100%; /* Added to ensure full width */
 }
 
 /* Heading */
 .heading {
-    font-size: 2.25rem;
+    font-size: 3rem;
     font-weight: bold;
     margin-bottom: 2rem;
     text-align: center;
@@ -63,6 +63,9 @@
     cursor: pointer;
     background-color: #2d3748;
     transition: background-color 0.3s ease-in-out;
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #E0BBE4;
 }
 
 .upload-label:hover {
@@ -81,22 +84,21 @@
 
 /* Upload Icon */
 .upload-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-bottom: 0.75rem;
+    width: 5rem;
+    height: 5rem;
     color: #E0BBE4;
 }
 
 /* Upload Text */
 .upload-text {
     margin-bottom: 0.5rem;
-    font-size: 0.875rem;
+    font-size: 1.5rem;
     color: #E0BBE4;
 }
 
 /* File Size */
 .file-size {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     color: #957DAD;
 }
 
