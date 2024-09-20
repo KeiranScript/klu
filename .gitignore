@@ -1,7 +1,6 @@
 __pycache__
 .venv
 json/*
-!json/keys.json
 uploads/*
 ecosystem.config.js
 .ssl
