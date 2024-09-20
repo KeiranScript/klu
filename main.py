@@ -233,10 +233,7 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"results": results})
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 9b7407ae27bdd68467bc32b6b528c08103f32e27
 @app.get("/info")
 async def get_server_info():
     upload_dir = Path(UPLOAD_DIR)
@@ -251,30 +248,6 @@ async def get_server_info():
         "users": total_users
     })
 
-<<<<<<< HEAD
-@app.get("/analytics")
-async def get_analytics():
-    upload_files = [f for f in Path(UPLOAD_DIR).glob('**/*') if f.is_file()]
-    file_types = Counter(f.suffix for f in upload_files)
-    user_uploads = Counter(f.parent.name for f in upload_files)
-
-    return JSONResponse(content={
-        "file_types": dict(file_types),
-        "user_uploads": dict(user_uploads)
-    })
-
-
-
-def format_size(size_in_bytes: int) -> str:
-    if size_in_bytes >= 1024**3:
-        return f"{size_in_bytes / 1024**3:.2f} GB"
-    if size_in_bytes >= 1024**2:
-        return f"{size_in_bytes / 1024**2:.2f} MB"
-    if size_in_bytes >= 1024:
-        return f"{size_in_bytes / 1024:.2f} KB"
-    return f"{size_in_bytes} B"
-=======
->>>>>>> 9b7407ae27bdd68467bc32b6b528c08103f32e27
 
 @app.post("/verify")
 async def verify_api_key_endpoint(authorization: str = Header(None)):
