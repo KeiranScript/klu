@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Anonhost</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pastel: {
+                            100: '#FFF0F5',
+                            200: '#E0BBE4',
+                            300: '#957DAD',
+                            400: '#D291BC',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-pastel-100 min-h-screen flex items-center justify-center">
+    <div class="container mx-auto p-8 max-w-md">
+        <h1 class="text-4xl font-bold mb-8 text-center animate-fadeIn">Login</h1>
+        <form id="login-form" class="space-y-6 animate-fadeIn" style="animation-delay: 0.2s;">
+            <div>
+                <label for="api-key" class="block text-sm font-medium text-pastel-200 mb-2">API Key</label>
+                <input type="password" id="api-key" name="api-key" required
+                    class="w-full px-3 py-2 bg-gray-800 border border-pastel-300 rounded-md text-pastel-100 focus:outline-none focus:ring-2 focus:ring-pastel-300">
+            </div>
+            <div>
+                <button type="submit"
+                    class="w-full bg-pastel-300 hover:bg-pastel-400 text-gray-900 font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105">
+                    Login
+                </button>
+            </div>
+        </form>
+        <div class="mt-4 text-center">
+            <a href="#" class="text-pastel-200 hover:text-pastel-300 transition duration-300">Don't have one? Find out why</a>
+        </div>
+        <div id="error-message" class="mt-4 text-red-500 text-center hidden"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKey = document.cookie.includes('api_key');
+            if (apiKey) {
+                window.location.href = '/';
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const apiKey = document.getElementById('api-key').value;
+            const errorMessage = document.getElementById('error-message');
+            
+            try {
+                const response = await fetch('/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`
+                    }
+                });
+
+                if (response.ok) {
+                    // Store API key in a cookie that expires in 7 days
+                    document.cookie = `api_key=${apiKey}; max-age=${7 * 24 * 60 * 60}; path=/; SameSite=Strict; Secure`;
+                    
+                    // Redirect to home page
+                    window.location.href = '/';
+                } else {
+                    errorMessage.textContent = 'Invalid API Key. Please try again.';
+                    errorMessage.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMessage.textContent = 'An error occurred. Please try again.';
+                errorMessage.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

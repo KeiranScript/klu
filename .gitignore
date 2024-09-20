@@ -1,10 +1,10 @@
 __pycache__
 .venv
-keys.json
-delete.json
+json/*
 uploads/*
 !uploads
-static/images/*
+static/*
 ecosystem.config.js
 .ssl
 notes.txt
+.env

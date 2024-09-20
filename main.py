@@ -1,98 +1,194 @@
-from pathlib import Path
-from uuid import uuid4
+from fastapi import FastAPI, Depends, File, UploadFile, Request, HTTPException, Header
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from datetime import datetime
 from rapidfuzz import process
-from fastapi import FastAPI, Depends, File, UploadFile, Request
-from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 from threading import Lock
-from collections import Counter
+from pathlib import Path
+from uuid import uuid4
+
+import string
 import random
 import json
 import os
+import shutil
 
 from modules.middleware import (
-    verify_api_key, validate_file, handle_file_upload,
+    validate_file, handle_file_upload,
     rate_limit
 )
 
 app = FastAPI()
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-app.mount("/static/zoe", StaticFiles(directory="static/zoe"), name="zoe")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-KEY_FILE = "json/keys.json"
-DEL_FILE = "json/delete.json"
-UPLOAD_DIR = "uploads"
-BASE_URL = "https://kuuichi.xyz"
-ZOE_VIEWS_FILE = "json/zoe_views.json"
+KEY_FILE = os.getenv("KEY_FILE", "json/keys.json")
+DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 templates = Jinja2Templates(directory="templates")
 file_delete_map = {}
+file_name_map = {}
 keys = {}
 file_locks = {}
 
+
 def load_json(file_path: str):
-    return json.load(open(file_path)) if os.path.exists(file_path) else {}
+    try:
+        with open(file_path, 'r') as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return {}
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error decoding JSON file")
+
 
 def save_json(file_path: str, data):
-    with open(file_path, 'w') as file:
-        json.dump(data, file, indent=4)
+    try:
+        with open(file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+    except IOError:
+        raise HTTPException(
+            status_code=500, detail="Error writing to JSON file")
+
 
 def init_globals():
     global file_delete_map, keys
     file_delete_map = load_json(DEL_FILE)
     keys = {entry['key']: entry['user'] for entry in load_json(KEY_FILE)}
 
-init_globals()
 
 def acquire_lock(file_name: str) -> Lock:
     if file_name not in file_locks:
         file_locks[file_name] = Lock()
     return file_locks[file_name]
 
+
 def format_file_size(size_in_bytes: int) -> str:
     return f"{size_in_bytes / 1024**2:.2f} MB" if size_in_bytes >= 1024**2 else f"{size_in_bytes / 1024:.2f} KB"
+
+
+def format_size(size_in_bytes: int) -> str:
+    if size_in_bytes >= 1024**3:
+        return f"{size_in_bytes / 1024**3:.2f} GB"
+    if size_in_bytes >= 1024**2:
+        return f"{size_in_bytes / 1024**2:.2f} MB"
+    if size_in_bytes >= 1024:
+        return f"{size_in_bytes / 1024:.2f} KB"
+    return f"{size_in_bytes} B"
+
+
+def generate_random_filename(length=8) -> str:
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+
+init_globals()
+
+
+async def verify_api_key(authorization: str = Header(None)):
+    if not authorization:
+        raise HTTPException(status_code=401, detail="No API key provided")
+
+    if authorization.startswith("Bearer "):
+        authorization = authorization.split(" ")[1]
+
+    if authorization not in keys:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+    return keys[authorization]
+
 
 @app.get("/ohhq")
 async def ohhq():
     return RedirectResponse(url='https://ohhq.gay', status_code=301)
 
 
-@app.post("/")
+@app.post("/upload")
 async def upload(file: UploadFile = File(...), username: str = Depends(verify_api_key)):
     with acquire_lock(file.filename):
         rate_limit(username)
         validate_file(file)
-        file_path, file_size, file_type, upload_time = handle_file_upload(file, username, UPLOAD_DIR)
+        file_path, file_size, file_type, upload_time = handle_file_upload(
+            file, username, UPLOAD_DIR)
+        generated_name = generate_random_filename()
+        full_file_path = Path(UPLOAD_DIR) / username / \
+            f"{generated_name}{file_path.suffix}"
 
+        try:
+            shutil.move(str(file_path), str(full_file_path))
+        except Exception as e:
+            raise HTTPException(
+                status_code=500, detail=f"Error moving file: {str(e)}")
+
+        if not full_file_path.exists():
+            raise HTTPException(
+                status_code=500, detail="File could not be found after upload")
+
+        file_name_map[generated_name] = str(full_file_path)
         delete_uuid = str(uuid4())
-        file_delete_map[delete_uuid] = str(file_path.resolve())
+        file_delete_map[delete_uuid] = str(full_file_path)
         save_json(DEL_FILE, file_delete_map)
 
         return JSONResponse(content={
-            "file_url": f"{BASE_URL}/uploads/{username}/{file_path.name}",
+            "file_url": f"{BASE_URL}/{generated_name}{full_file_path.suffix}",
             "file-size": format_file_size(file_size),
             "file-type": file_type,
             "date-uploaded": upload_time,
             "delete_url": f"{BASE_URL}/delete/{delete_uuid}"
         })
 
+
+@app.get("/")
+async def home(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
+@app.get("/login")
+async def login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@app.get("/uploads/{username}/{file_name}")
+async def serve_embed(request: Request, username: str, file_name: str):
+    file_path = Path(UPLOAD_DIR) / username / file_name
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
+
+    return templates.TemplateResponse("embed.html", {
+        "request": request,
+        "file_name": file_name,
+        "file_url": file_url,
+        "username": username
+    })
+
+
 @app.get("/delete/{delete_uuid}")
 async def delete_file(request: Request, delete_uuid: str):
     file_path = file_delete_map.pop(delete_uuid, None)
     save_json(DEL_FILE, file_delete_map)
+
     if not file_path or not os.path.exists(file_path):
         return templates.TemplateResponse("file_not_found.html", {"request": request})
-    os.remove(file_path)
+
+    try:
+        os.remove(file_path)
+    except OSError as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete file: {str(e)}")
+
     return templates.TemplateResponse("file_deleted.html", {"request": request})
+
 
 @app.get("/files")
 async def list_files(username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
     if not user_dir.exists():
-        return JSONResponse(content={"error": "User directory not found"}, status_code=404)
+        raise HTTPException(status_code=404, detail="User directory not found")
 
     files = [{
         "file_name": file.name,
@@ -105,11 +201,26 @@ async def list_files(username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"files": files})
 
+
+@app.get("/{generated_filename}")
+async def serve_file(generated_filename: str):
+    original_file_path = file_name_map.get(generated_filename.split('.')[0])
+
+    if not original_file_path or not os.path.exists(original_file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    username = Path(original_file_path).parent.name
+    file_name = Path(original_file_path).name
+    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
+
+    return RedirectResponse(url=file_url)
+
+
 @app.get("/search")
 async def search_files(query: str, username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
     if not user_dir.exists():
-        return JSONResponse(content={"error": "User directory not found"}, status_code=404)
+        raise HTTPException(status_code=404, detail="User directory not found")
 
     file_names = [f.name for f in user_dir.glob("*") if f.is_file()]
     matches = process.extract(query, file_names, limit=10)
@@ -122,10 +233,15 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"results": results})
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 9b7407ae27bdd68467bc32b6b528c08103f32e27
 @app.get("/info")
 async def get_server_info():
     upload_dir = Path(UPLOAD_DIR)
-    total_storage_used = sum(f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
+    total_storage_used = sum(
+        f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
     total_uploads = sum(1 for _ in upload_dir.glob('**/*') if _.is_file())
     total_users = sum(1 for _ in upload_dir.iterdir() if _.is_dir())
 
@@ -135,6 +251,7 @@ async def get_server_info():
         "users": total_users
     })
 
+<<<<<<< HEAD
 @app.get("/analytics")
 async def get_analytics():
     upload_files = [f for f in Path(UPLOAD_DIR).glob('**/*') if f.is_file()]
@@ -156,8 +273,18 @@ def format_size(size_in_bytes: int) -> str:
     if size_in_bytes >= 1024:
         return f"{size_in_bytes / 1024:.2f} KB"
     return f"{size_in_bytes} B"
+=======
+>>>>>>> 9b7407ae27bdd68467bc32b6b528c08103f32e27
 
+@app.post("/verify")
+async def verify_api_key_endpoint(authorization: str = Header(None)):
+    try:
+        username = await verify_api_key(authorization)
+        return JSONResponse(content={"status": "success", "message": "API key is valid", "username": username})
+    except HTTPException as e:
+        return JSONResponse(status_code=e.status_code, content={"status": "error", "message": e.detail})
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host=os.getenv("HOST", "0.0.0.0"),
+                port=int(os.getenv("PORT", 8000)))
