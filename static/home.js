@@ -31,9 +31,10 @@ document.getElementById('file-upload').addEventListener('change', async function
     const file = e.target.files[0];
     if (!file) return;
 
-    // Clear previous upload status and reset copy button
+    // Clear the previous upload information
     resetUploadStatus();
-
+    
+    // Proceed with uploading the file
     await uploadFile(file);
 });
 
@@ -92,12 +93,14 @@ function showUploadStatus(message, fileUrl) {
 
 function resetUploadStatus() {
     // Reset the file input
-    document.getElementById('file-upload').value = null;
+    document.getElementById('file-upload').value = '';
 
-    // Hide the upload status and reset the message
+    // Clear previous status
     const statusElement = document.getElementById('upload-status');
+    const messageElement = document.getElementById('upload-message');
     const copyButton = document.getElementById('copy-url');
 
+    messageElement.textContent = '';
     statusElement.classList.add('hidden');
     copyButton.classList.add('hidden');
 }
