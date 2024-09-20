@@ -27,7 +27,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 KEY_FILE = os.getenv("KEY_FILE", "json/keys.json")
 DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
-BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+BASE_URL = os.getenv("BASE_URL", "https://kuuichi.xyz")
 
 templates = Jinja2Templates(directory="templates")
 file_delete_map = {}
