@@ -122,32 +122,6 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
 
     return JSONResponse(content={"results": results})
 
-def load_zoe_views() -> int:
-    if os.path.exists(ZOE_VIEWS_FILE):
-        with open(ZOE_VIEWS_FILE, 'r') as file:
-            return json.load(file).get("zoe_views", 0)
-    return 0
-
-def save_zoe_views(views: int):
-    with open(ZOE_VIEWS_FILE, 'w') as file:
-        json.dump({"zoe_views": views}, file, indent=4)
-
-zoe_views = load_zoe_views()
-
-@app.get("/zoe")
-async def serve_random_zoe_file():
-    global zoe_views
-    zoe_dir = Path("static/zoe")
-
-    if not zoe_dir.exists() or not any(zoe_dir.iterdir()):
-        return JSONResponse(content={"error": "No files found in the /static/zoe directory"}, status_code=404)
-
-    random_file = random.choice([f for f in zoe_dir.iterdir() if f.is_file()])
-    zoe_views += 1
-    save_zoe_views(zoe_views)
-
-    return RedirectResponse(url=f"/static/zoe/{random_file.name}", status_code=302)
-
 @app.get("/info")
 async def get_server_info():
     upload_dir = Path(UPLOAD_DIR)
@@ -158,8 +132,7 @@ async def get_server_info():
     return JSONResponse(content={
         "storage_used": format_size(total_storage_used),
         "uploads": total_uploads,
-        "users": total_users,
-        "zoe_views": zoe_views  # Include the counter here
+        "users": total_users
     })
 
 @app.get("/analytics")
@@ -172,6 +145,8 @@ async def get_analytics():
         "file_types": dict(file_types),
         "user_uploads": dict(user_uploads)
     })
+
+
 
 def format_size(size_in_bytes: int) -> str:
     if size_in_bytes >= 1024**3:
