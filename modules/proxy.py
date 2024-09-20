@@ -2,18 +2,11 @@ import http.server
 import socketserver
 import http.client
 from urllib.parse import urlparse
-import ssl
-import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
 
 class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        self.proxy_host = os.getenv('HOST', 'localhost')
-        self.proxy_port = int(os.getenv('PORT', 8000))
-        super().__init__(*args, **kwargs)
+    proxy_host = 'localhost'
+    proxy_port = 8000
 
     def do_GET(self):
         self.forward_request()
@@ -57,20 +50,14 @@ class ReverseProxyHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
         conn.close()
 
 
-PORT = int(os.getenv('PORT', 443))  # Default to 443 if not set in .env
+PORT = 80  # Only accepting requests on port 80
+
 
 class ThreadedHTTPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
+
 httpd = ThreadedHTTPServer(("", PORT), ReverseProxyHTTPRequestHandler)
 
-# Create an SSL context
-context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-context.load_cert_chain(certfile=os.getenv('SSL_CERTFILE', "/etc/letsencrypt/live/kuuichi.xyz/fullchain.pem"),
-                        keyfile=os.getenv('SSL_KEYFILE', "/etc/letsencrypt/live/kuuichi.xyz/privkey.pem"))
-
-# Wrap the server socket with SSL
-httpd.socket = context.wrap_socket(httpd.socket, server_side=True)
-
-print(f"Serving at port {PORT} with SSL")
+print(f"Serving at port {PORT}")
 httpd.serve_forever()
