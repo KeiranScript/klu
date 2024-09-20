@@ -1,7 +1,6 @@
-/* Import Inter font */
 @font-face {
     font-family: 'Inter';
-    src: url('/static/Inter.ttf') format('truetype');
+    src: url('./Inter.ttf') format('truetype'); /* Adjusted path */
     font-weight: normal;
     font-style: normal;
 }
