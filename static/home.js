@@ -31,76 +31,85 @@ document.getElementById('file-upload').addEventListener('change', async function
     const file = e.target.files[0];
     if (!file) return;
 
-    const fileName = file.name;
-    const fileInfo = document.createElement('p');
-    fileInfo.textContent = `Selected file: ${fileName}`;
-    fileInfo.classList.add('mt-2', 'text-sm', 'text-pastel-200', 'animate-fadeIn');
-    e.target.parentNode.appendChild(fileInfo);
+    // Clear previous upload status and reset copy button
+    resetUploadStatus();
 
-          await uploadFile(file);
-      });
+    await uploadFile(file);
+});
 
-      async function uploadFile(file) {
-          const apiKey = getCookie('api_key');
-          if (!apiKey) {
-              window.location.href = '/login';
-              return;
-          }
+async function uploadFile(file) {
+    const apiKey = getCookie('api_key');
+    if (!apiKey) {
+        window.location.href = '/login';
+        return;
+    }
 
-          const formData = new FormData();
-          formData.append('file', file);
+    const formData = new FormData();
+    formData.append('file', file);
 
-          try {
-              const response = await fetch('/upload', {
-                  method: 'POST',
-                  headers: {
-                      'Authorization': apiKey
-                  },
-                  body: formData
-              });
+    try {
+        const response = await fetch('/upload', {
+            method: 'POST',
+            headers: {
+                'Authorization': apiKey
+            },
+            body: formData
+        });
 
-              if (response.ok) {
-                  const result = await response.json();
-                  showUploadStatus('File uploaded successfully!', result.file_url);
-              } else {
-                  const errorData = await response.json();
-                  showError(errorData.detail || 'File upload failed. Please try again.');
-              }
-          } catch (error) {
-              console.error('Error:', error);
-              showError('An error occurred. Please try again.');
-          }
-      }
+        if (response.ok) {
+            const result = await response.json();
+            showUploadStatus('File uploaded successfully!', result.file_url);
+        } else {
+            const errorData = await response.json();
+            showError(errorData.detail || 'File upload failed. Please try again.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showError('An error occurred. Please try again.');
+    }
+}
 
-      function showUploadStatus(message, fileUrl) {
-          const statusElement = document.getElementById('upload-status');
-          const messageElement = document.getElementById('upload-message');
-          const copyButton = document.getElementById('copy-url');
+function showUploadStatus(message, fileUrl) {
+    const statusElement = document.getElementById('upload-status');
+    const messageElement = document.getElementById('upload-message');
+    const copyButton = document.getElementById('copy-url');
 
-          messageElement.textContent = message;
-          statusElement.classList.remove('hidden');
-          copyButton.classList.remove('hidden');
+    messageElement.textContent = message;
+    statusElement.classList.remove('hidden');
+    copyButton.classList.remove('hidden');
 
-          copyButton.onclick = function() {
-              navigator.clipboard.writeText(fileUrl).then(() => {
-                  copyButton.textContent = 'Copied!';
-                  copyButton.classList.add('animate-pulse');
-                  setTimeout(() => {
-                      copyButton.textContent = 'Copy URL';
-                      copyButton.classList.remove('animate-pulse');
-                  }, 2000);
-              });
-          };
-      }
+    copyButton.onclick = function() {
+        navigator.clipboard.writeText(fileUrl).then(() => {
+            copyButton.textContent = 'Copied!';
+            copyButton.classList.add('animate-pulse');
+            setTimeout(() => {
+                copyButton.textContent = 'Copy URL';
+                copyButton.classList.remove('animate-pulse');
+            }, 2000);
+        });
+    };
+}
 
-      function getCookie(name) {
-          const value = `; ${document.cookie}`;
-          const parts = value.split(`; ${name}=`);
-          if (parts.length === 2) return parts.pop().split(';').shift();
-      }
+function resetUploadStatus() {
+    // Reset the file input
+    document.getElementById('file-upload').value = null;
 
-      function showError(message) {
-          const errorElement = document.getElementById('error-message');
-          errorElement.textContent = message;
-          errorElement.classList.remove('hidden');
-      }
+    // Hide the upload status and reset the message
+    const statusElement = document.getElementById('upload-status');
+    const copyButton = document.getElementById('copy-url');
+
+    statusElement.classList.add('hidden');
+    copyButton.classList.add('hidden');
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function showError(message) {
+    const errorElement = document.getElementById('error-message');
+    errorElement.textContent = message;
+    errorElement.classList.remove('hidden');
+}
