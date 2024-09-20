@@ -1,3 +1,11 @@
+/* Import Inter font */
+@font-face {
+    font-family: 'Inter';
+    src: url('/static/Inter.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
 /* General styles */
 body.body {
     background-color: #1A202C;
@@ -6,7 +14,7 @@ body.body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: sans-serif;
+    font-family: 'Inter', sans-serif; /* Apply Inter font */
 }
 
 .container {
