@@ -3,7 +3,6 @@ __pycache__
 json/*
 uploads/*
 !uploads
-static/*
 ecosystem.config.js
 .ssl
 notes.txt

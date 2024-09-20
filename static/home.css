@@ -1,0 +1,142 @@
+/* Body */
+.body {
+    background-color: #1a202c; /* bg-gray-900 */
+    color: #FFD1DC; /* text-pastel-100 */
+    min-height: 100vh; /* min-h-screen */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Container */
+.container {
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2rem; /* p-8 */
+    max-width: 28rem; /* max-w-md */
+}
+
+/* Heading */
+.heading {
+    font-size: 2.25rem; /* text-4xl */
+    font-weight: bold; /* font-bold */
+    margin-bottom: 2rem; /* mb-8 */
+    text-align: center; /* text-center */
+}
+
+/* Form */
+.form {
+    margin-bottom: 1.5rem; /* space-y-6 */
+}
+
+/* Flex Center */
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Upload Label */
+.upload-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 16rem; /* h-64 */
+    border: 2px dashed #E0BBE4; /* border-2, border-pastel-300, border-dashed */
+    border-radius: 0.5rem; /* rounded-lg */
+    cursor: pointer; /* cursor-pointer */
+    background-color: #2d3748; /* bg-gray-800 */
+    transition: background-color 0.3s ease-in-out; /* transition */
+}
+
+.upload-label:hover {
+    background-color: #4a5568; /* hover:bg-gray-700 */
+}
+
+/* Upload Content */
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-top: 1.25rem; /* pt-5 */
+    padding-bottom: 1.5rem; /* pb-6 */
+}
+
+/* Upload Icon */
+.upload-icon {
+    width: 2.5rem; /* w-10 */
+    height: 2.5rem; /* h-10 */
+    margin-bottom: 0.75rem; /* mb-3 */
+    color: #E0BBE4; /* text-pastel-200 */
+}
+
+/* Upload Text */
+.upload-text {
+    margin-bottom: 0.5rem; /* mb-2 */
+    font-size: 0.875rem; /* text-sm */
+    color: #E0BBE4; /* text-pastel-200 */
+}
+
+/* File Size */
+.file-size {
+    font-size: 0.75rem; /* text-xs */
+    color: #957DAD; /* text-pastel-300 */
+}
+
+/* Hidden Input */
+.hidden-input {
+    display: none;
+}
+
+/* Status */
+.status {
+    margin-top: 1rem; /* mt-4 */
+    text-align: center; /* text-center */
+}
+
+/* Status Message */
+.status-message {
+    color: #E0BBE4; /* text-pastel-200 */
+}
+
+/* Copy Button */
+.copy-button {
+    margin-top: 0.5rem; /* mt-2 */
+    background-color: #E0BBE4; /* bg-pastel-300 */
+    color: #1a202c; /* text-gray-900 */
+    font-weight: bold; /* font-bold */
+    padding: 0.5rem 1rem; /* py-2 px-4 */
+    border-radius: 0.5rem; /* rounded-lg */
+    transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out; /* transition */
+}
+
+.copy-button:hover {
+    background-color: #D291BC; /* hover:bg-pastel-400 */
+    transform: scale(1.05); /* hover:scale-105 */
+}
+
+/* Error Message */
+.error-message {
+    margin-top: 1rem; /* mt-4 */
+    color: #f56565; /* text-red-500 */
+    text-align: center; /* text-center */
+}
+
+/* Hidden Class */
+.hidden {
+    display: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.5s ease-in-out;
+}
