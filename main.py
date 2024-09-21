@@ -202,20 +202,6 @@ async def list_files(username: str = Depends(verify_api_key)):
     return JSONResponse(content={"files": files})
 
 
-@app.get("/{generated_filename}")
-async def serve_file(generated_filename: str):
-    original_file_path = file_name_map.get(generated_filename.split('.')[0])
-
-    if not original_file_path or not os.path.exists(original_file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    username = Path(original_file_path).parent.name
-    file_name = Path(original_file_path).name
-    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
-
-    return RedirectResponse(url=file_url)
-
-
 @app.get("/search")
 async def search_files(query: str, username: str = Depends(verify_api_key)):
     user_dir = Path(UPLOAD_DIR) / username
@@ -256,6 +242,20 @@ async def verify_api_key_endpoint(authorization: str = Header(None)):
         return JSONResponse(content={"status": "success", "message": "API key is valid", "username": username})
     except HTTPException as e:
         return JSONResponse(status_code=e.status_code, content={"status": "error", "message": e.detail})
+
+
+@app.get("/{generated_filename}")
+async def serve_file(generated_filename: str):
+    original_file_path = file_name_map.get(generated_filename.split('.')[0])
+
+    if not original_file_path or not os.path.exists(original_file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    username = Path(original_file_path).parent.name
+    file_name = Path(original_file_path).name
+    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
+
+    return RedirectResponse(url=file_url)
 
 if __name__ == "__main__":
     import uvicorn
