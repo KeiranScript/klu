@@ -1,69 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Anonhost</title>
-    <link rel="stylesheet" href="/static/login.css">
-    <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anonhost - Login</title>
+  <link rel="stylesheet" href="/static/login.css">
+  <style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+  </style>
 </head>
+
 <body class="body">
-    <div class="container">
-        <h1 class="title animate-fadeIn">Login</h1>
-        <form id="login-form" class="form animate-fadeIn" style="animation-delay: 0.2s;">
-            <div class="input-group">
-                <label for="api-key" class="label">API Key</label>
-                <input type="password" id="api-key" name="api-key" required class="input">
-            </div>
-            <div class="input-group">
-                <button type="submit" class="button">Login</button>
-            </div>
-        </form>
-        <div class="link-container">
-            <a href="#" class="link">Don't have one? Find out why</a>
-        </div>
-        <div id="error-message" class="error-message hidden"></div>
+  <div class="container">
+    <h1 class="title animate-fadeIn">Login</h1>
+    <form id="login-form" class="form animate-fadeIn" style="animation-delay: 0.2s;">
+      <div class="input-group">
+        <label for="api-key" class="label">API Key</label>
+        <input type="password" id="api-key" name="api-key" required class="input">
+      </div>
+      <div class="input-group">
+        <button type="submit" class="button">Login</button>
+      </div>
+    </form>
+    <div class="link-container">
+      <a href="#" class="link">Don't have one? Find out why</a>
     </div>
+    <div id="error-message" class="error-message hidden"></div>
+  </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const apiKey = document.cookie.includes('api_key');
-            if (apiKey) {
-                window.location.href = '/';
-            }
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const apiKey = document.cookie.includes('api_key');
+      if (apiKey) {
+        window.location.href = '/';
+      }
+    });
+
+    document.getElementById('login-form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const apiKey = document.getElementById('api-key').value;
+      const errorMessage = document.getElementById('error-message');
+
+      try {
+        const response = await fetch('/verify', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`
+          }
         });
 
-        document.getElementById('login-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const apiKey = document.getElementById('api-key').value;
-            const errorMessage = document.getElementById('error-message');
-            
-            try {
-                const response = await fetch('/verify', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${apiKey}`
-                    }
-                });
-
-                if (response.ok) {
-                    document.cookie = `api_key=${apiKey}; max-age=${7 * 24 * 60 * 60}; path=/; SameSite=Strict; Secure`;
-                    window.location.href = '/';
-                } else {
-                    errorMessage.textContent = 'Invalid API Key. Please try again.';
-                    errorMessage.classList.remove('hidden');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                errorMessage.textContent = 'An error occurred. Please try again.';
-                errorMessage.classList.remove('hidden');
-            }
-        });
-    </script>
+        if (response.ok) {
+          document.cookie = `api_key=${apiKey}; max-age=${7 * 24 * 60 * 60}; path=/; SameSite=Strict; Secure`;
+          window.location.href = '/';
+        } else {
+          errorMessage.textContent = 'Invalid API Key. Please try again.';
+          errorMessage.classList.remove('hidden');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        errorMessage.textContent = 'An error occurred. Please try again.';
+        errorMessage.classList.remove('hidden');
+      }
+    });
+  </script>
 </body>
+
 </html>
