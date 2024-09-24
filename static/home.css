@@ -18,28 +18,24 @@
 
 /* Container */
 .container {
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto;
     padding: 2rem;
-    max-width: 20rem; /* Increased from 28rem to 48rem */
-    width: 100%; /* Added to ensure full width */
+    max-width: 48rem; /* Adjusted for better balance */
+    width: 100%;
 }
 
 /* Heading */
 .heading {
     font-size: 3rem;
-    font-weight: bold;
+    font-weight: 700; /* Use numeric weight for consistency */
     margin-bottom: 2rem;
     text-align: center;
-    width: 100%; /* Added to ensure full width */
 }
 
 /* Form */
 .form {
-    margin-bottom: 1.5rem;
-    max-width: 36rem; /* Added to limit form width */
-    margin-left: auto; /* Center the form */
-    margin-right: auto; /* Center the form */
+    margin: 0 auto 1.5rem auto; /* Center and space below */
+    max-width: 36rem;
 }
 
 /* Flex Center */
@@ -64,7 +60,7 @@
     background-color: #2d3748;
     transition: background-color 0.3s ease-in-out;
     font-size: 1.25rem;
-    font-weight: bold;
+    font-weight: 600; /* Adjusted for visual consistency */
     color: #E0BBE4;
 }
 
@@ -78,8 +74,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding-top: 1.25rem;
-    padding-bottom: 1.5rem;
+    padding: 1.25rem 0; /* Consistent vertical padding */
 }
 
 /* Upload Icon */
@@ -98,7 +93,7 @@
 
 /* File Size */
 .file-size {
-    font-size: 0.8rem;
+    font-size: 0.9rem; /* Slightly larger for readability */
     color: #957DAD;
 }
 
@@ -121,17 +116,32 @@
 /* Copy Button */
 .copy-button {
     margin-top: 0.5rem;
-    background-color: #E0BBE4;
-    color: #1a202c;
-    font-weight: bold;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out;
+    background-color: #E0BBE4; /* Light pink */
+    color: #1a202c; /* Dark background color for text */
+    font-weight: 600; /* Consistent font weight */
+    padding: 0.75rem 1.5rem; /* Adequate padding for a larger hit area */
+    border-radius: 0.5rem; /* Rounded corners for a softer look */
+    border: none; /* No border for a cleaner look */
+    font-size: 1rem; /* Consistent font size */
+    transition: background-color 0.3s ease-in-out, transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out; /* Smooth transitions */
+    cursor: pointer; /* Pointer cursor for button hover */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* Subtle shadow for depth */
 }
 
 .copy-button:hover {
-    background-color: #D291BC;
-    transform: scale(1.05);
+    background-color: #D291BC; /* Slightly darker shade on hover */
+    transform: translateY(-2px); /* Lift effect for interactivity */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Enhanced shadow on hover */
+}
+
+.copy-button:focus {
+    outline: none; /* Remove default outline */
+    box-shadow: 0 0 0 2px rgba(225, 150, 210, 0.5); /* Custom focus ring for accessibility */
+}
+
+.copy-button:active {
+    transform: translateY(0); /* Reset transform on click */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* Return to original shadow */
 }
 
 /* Error Message */
@@ -154,4 +164,13 @@
 
 .animate-fadeIn {
     animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.animate-pulse {
+    animation: pulse 0.5s ease-in-out;
 }
