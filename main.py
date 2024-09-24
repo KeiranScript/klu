@@ -101,9 +101,19 @@ async def verify_api_key(authorization: str = Header(None)):
     return keys[authorization]
 
 
-@app.get("/ohhq")
-async def ohhq():
-    return RedirectResponse(url='https://ohhq.gay', status_code=301)
+@app.get("/info")
+async def get_server_info():
+    upload_dir = Path(UPLOAD_DIR)
+    total_storage_used = sum(
+        f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
+    total_uploads = sum(1 for _ in upload_dir.glob('**/*') if _.is_file())
+    total_users = sum(1 for _ in upload_dir.iterdir() if _.is_dir())
+
+    return JSONResponse(content={
+        "storage_used": format_size(total_storage_used),
+        "uploads": total_uploads,
+        "users": total_users
+    })
 
 
 @app.post("/upload")
@@ -220,19 +230,18 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
     return JSONResponse(content={"results": results})
 
 
-@app.get("/info")
-async def get_server_info():
-    upload_dir = Path(UPLOAD_DIR)
-    total_storage_used = sum(
-        f.stat().st_size for f in upload_dir.glob('**/*') if f.is_file())
-    total_uploads = sum(1 for _ in upload_dir.glob('**/*') if _.is_file())
-    total_users = sum(1 for _ in upload_dir.iterdir() if _.is_dir())
+@app.get("/{generated_filename}")
+async def serve_file(generated_filename: str):
+    original_file_path = file_name_map.get(generated_filename.split('.')[0])
 
-    return JSONResponse(content={
-        "storage_used": format_size(total_storage_used),
-        "uploads": total_uploads,
-        "users": total_users
-    })
+    if not original_file_path or not os.path.exists(original_file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    username = Path(original_file_path).parent.name
+    file_name = Path(original_file_path).name
+    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
+
+    return RedirectResponse(url=file_url)
 
 
 @app.post("/verify")
