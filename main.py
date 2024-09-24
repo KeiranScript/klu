@@ -21,9 +21,9 @@ app = FastAPI()
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-KEY_FILE = os.getenv("KEY_FILE", "json/keys.json")
-DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
+DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
+KEY_FILE = os.getenv("KEY_FILE", "json/keys.json")
 BASE_URL = os.getenv("BASE_URL", "https://kuuichi.xyz")
 
 templates = Jinja2Templates(directory="templates")
