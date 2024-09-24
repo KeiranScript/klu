@@ -111,6 +111,11 @@ async def login(request: Request):
     return templates.TemplateResponse("login.html", {"request": request})
 
 
+@app.get("/mydocs")
+async def mydocs(request: Request):
+    return templates.TemplateResponse("docs.html", {"request": request})
+
+
 @app.get("/info")
 async def get_server_info():
     upload_dir = Path(UPLOAD_DIR)

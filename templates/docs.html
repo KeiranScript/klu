@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anonhost Docs</title>
+  <link rel="stylesheet" href="/static/docs.css">
+</head>
+
+<body>
+  <header>
+    <h1>Documentation</h1>
+  </header>
+  <main>
+    <section class="endpoint">
+      <h2>GET /info</h2>
+      <p>Returns server information including storage used, total uploads, and total users.</p>
+      <h3>Response:</h3>
+      <pre>
+        {
+        "storage_used": "XX MB",
+        "uploads": XX,
+        "users": XX
+        }
+      </pre>
+    </section>
+
+    <section class="endpoint">
+      <h2>POST /upload</h2>
+      <p>Uploads a file to the server.</p>
+      <h3>Request Body:</h3>
+      <p>File: (form-data)</p>
+      <h3>Response:</h3>
+      <pre>
+        {
+        "file_url": "https://kuuichi.xyz/generated_name.ext",
+        "file-size": "XX MB",
+        "file-type": "image/png",
+        "date-uploaded": "YYYY-MM-DD HH:MM:SS",
+        "delete_url": "https://kuuichi.xyz/delete/UUID"
+        }
+      </pre>
+    </section>
+
+    <section class="endpoint">
+      <h2>GET /uploads/{username}/{file_name}</h2>
+      <p>Serves the requested file.</p>
+    </section>
+
+    <section class="endpoint">
+      <h2>DELETE /delete/{delete_uuid}</h2>
+      <p>Deletes a file based on the provided UUID.</p>
+    </section>
+
+    <section class="endpoint">
+      <h2>GET /files</h2>
+      <p>Lists all files for the authenticated user.</p>
+      <h3>Response:</h3>
+      <pre>
+        {
+        "files": [
+        {
+        "file_name": "example.txt",
+        "file_url": "https://kuuichi.xyz/uploads/username/example.txt",
+        "file-size": "XX KB",
+        "file-type": "txt",
+        "date-uploaded": "YYYY-MM-DD HH:MM:SS",
+        "delete_url": "https://kuuichi.xyz/delete/UUID"
+        },
+        ...
+        ]
+        }
+      </pre>
+    </section>
+
+    <section class="endpoint">
+      <h2>GET /search</h2>
+      <p>Search for files based on a query string.</p>
+      <h3>Query Parameters:</h3>
+      <p>query: The search term to match file names.</p>
+      <h3>Response:</h3>
+      <pre>
+        {
+        "results": [
+        {
+        "file_name": "example.txt",
+        "file_url": "https://kuuichi.xyz/uploads/username/example.txt",
+        "score": 90
+        },
+        ...
+        ]
+        }
+      </pre>
+    </section>
+  </main>
+</body>
+
+</html>
