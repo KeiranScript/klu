@@ -101,6 +101,16 @@ async def verify_api_key(authorization: str = Header(None)):
     return keys[authorization]
 
 
+@app.get("/")
+async def home(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
+
+
+@app.get("/login")
+async def login(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
 @app.get("/info")
 async def get_server_info():
     upload_dir = Path(UPLOAD_DIR)
@@ -149,16 +159,6 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
             "date-uploaded": upload_time,
             "delete_url": f"{BASE_URL}/delete/{delete_uuid}"
         })
-
-
-@app.get("/")
-async def home(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
-
-
-@app.get("/login")
-async def login(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
 
 
 @app.get("/uploads/{username}/{file_name}")
@@ -228,20 +228,6 @@ async def search_files(query: str, username: str = Depends(verify_api_key)):
     } for match in matches]
 
     return JSONResponse(content={"results": results})
-
-
-@app.get("/{generated_filename}")
-async def serve_file(generated_filename: str):
-    original_file_path = file_name_map.get(generated_filename.split('.')[0])
-
-    if not original_file_path or not os.path.exists(original_file_path):
-        raise HTTPException(status_code=404, detail="File not found")
-
-    username = Path(original_file_path).parent.name
-    file_name = Path(original_file_path).name
-    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
-
-    return RedirectResponse(url=file_url)
 
 
 @app.post("/verify")
