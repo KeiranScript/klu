@@ -20,6 +20,7 @@ app = FastAPI()
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/bio_files", StaticFiles(directory="static/bio_files", html=True), name="static")
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
