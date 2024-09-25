@@ -9,7 +9,6 @@
   <meta name="author" content="keirandev">
   <meta property="og:title" content="Anonhost - Home">
   <meta property="og:description" content="Upload and manage your files securely and easily.">
-  <!-- <meta property="og:image" content="https://kuuichi.xyz/static/your-image.jpg"> -->
   <meta property="og:url" content="https://kuuichi.xyz">
 
   <title>Anonhost</title>
@@ -49,9 +48,24 @@
 </head>
 
 <body class="body">
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="/" class="navbar-logo">Anonhost</a>
+      <ul class="navbar-menu">
+        <li><a href="/stats" class="navbar-link">Stats</a></li>
+        <li><a href="/mydocs" class="navbar-link">Docs</a></li>
+        <li><a href="/bio" class="navbar-link">Bio</a></li>
+      </ul>
+      <button class="navbar-toggle" aria-label="Toggle navigation">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+  </nav>
   <div class="container">
     <h1 class="heading animate-fadeIn">Anonhost</h1>
-    <form id="upload-form" class="form animate-fadeIn" style="animation-delay: 0.2s;">
+    <form id="upload-form" class="form animate-fadeIn" style="animation-delay: 0.15s;">
       <div class="flex-center">
         <label for="file-upload" class="upload-label">
           <div class="upload-content">

@@ -131,3 +131,12 @@ function showError(message) {
   errorElement.textContent = message;
   errorElement.classList.remove('hidden');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const navbarToggle = document.querySelector('.navbar-toggle');
+  const navbarMenu = document.querySelector('.navbar-menu');
+
+  navbarToggle.addEventListener('click', () => {
+    navbarMenu.classList.toggle('active');
+  });
+});
