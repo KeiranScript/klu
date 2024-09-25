@@ -14,7 +14,7 @@ body.body {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-family: 'Inter', sans-serif; /* Apply Inter font */
+    font-family: 'Inter', sans-serif;
 }
 
 .container {
@@ -38,7 +38,10 @@ body.body {
 
 .input-group {
     display: flex;
+    max-width: 400px;
+    width: 100%;
     flex-direction: column;
+    margin-bottom: 1rem;
 }
 
 .label {
@@ -70,6 +73,8 @@ body.body {
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.3s ease, background-color 0.3s ease;
+    border: none;
+    margin-top: 0.5rem;
 }
 
 .button:hover {
@@ -78,7 +83,7 @@ body.body {
 }
 
 .link-container {
-    margin-top: 1rem;
+    margin-top: 2rem;
     text-align: center;
 }
 
@@ -92,8 +97,36 @@ body.body {
     color: #957DAD;
 }
 
+.user_label {
+    font-size: 0.875rem;
+    color: #E0BBE4;
+    margin-bottom: 0.5rem;
+    text-align: left;
+    margin-top: 1rem;
+}
+
 .error-message {
     color: #F56565;
     text-align: center;
     margin-top: 1rem;
+}
+
+.hidden {
+    display: none;
+}
+
+#api-key-container {
+    margin-top: 1rem;
+    text-align: center;
+}
+
+#generated-api-key {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #E0BBE4;
+    margin-bottom: 1rem;
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.5s ease-in-out;
 }

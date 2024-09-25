@@ -290,6 +290,25 @@ async def verify_api_key_endpoint(authorization: str = Header(None)):
         )
 
 
+@app.post("/generate-key")
+async def generate_api_key(username: str):
+    new_key = str(uuid4())
+
+    keys_data = load_json(KEY_FILE)
+    if username in keys_data:
+        return JSONResponse(
+            status_code=409,
+            content={"status": "error", "message": "Username already exists"},
+        )
+    keys_data.append({"user": username, "key": new_key})
+
+    save_json(KEY_FILE, keys_data)
+
+    init_globals()
+
+    return JSONResponse(content={"key": new_key})
+
+
 @app.get("/{generated_filename}")
 async def serve_file(generated_filename: str):
     original_file_path = file_name_map.get(generated_filename.split(".")[0])

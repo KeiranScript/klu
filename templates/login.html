@@ -32,9 +32,18 @@
       </div>
     </form>
     <div class="link-container">
-      <a href="#" class="link">Don't have one? Find out why</a>
+      <a href="#" id="get-api-key" class="link">Don't have one? Get one!</a>
     </div>
     <div id="error-message" class="error-message hidden"></div>
+    <div id="username-container" class="input-group hidden animate-fadeIn">
+      <label for="username" class="user_label">Enter your username</label>
+      <input type="text" id="username" name="username" required class="input">
+      <button id="generate-key" class="button">Generate API Key</button>
+    </div>
+    <div id="api-key-container" class="hidden animate-fadeIn">
+      <p>Your API Key: <br><span id="generated-api-key"></span></p>
+      <button id="copy-key" class="button">Copy Key</button>
+    </div>
   </div>
 
   <script>
@@ -70,6 +79,48 @@
         errorMessage.textContent = 'An error occurred. Please try again.';
         errorMessage.classList.remove('hidden');
       }
+    });
+
+    document.getElementById('get-api-key').addEventListener('click', function (e) {
+      e.preventDefault();
+      document.getElementById('username-container').classList.remove('hidden');
+    });
+
+    document.getElementById('generate-key').addEventListener('click', async function (e) {
+      e.preventDefault();
+      const username = document.getElementById('username').value;
+      if (!username) {
+        alert('Please enter a username');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/generate-key?username=${encodeURIComponent(username)}`, {
+          method: 'POST'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const apiKey = data.key;
+          document.getElementById('generated-api-key').textContent = apiKey;
+          document.getElementById('api-key-container').classList.remove('hidden');
+          document.getElementById('username-container').classList.add('hidden');
+        } else {
+          alert('Failed to generate API key. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+      }
+    });
+
+    document.getElementById('copy-key').addEventListener('click', function () {
+      const apiKey = document.getElementById('generated-api-key').textContent;
+      navigator.clipboard.writeText(apiKey).then(function () {
+        alert('API key copied to clipboard!');
+      }, function (err) {
+        console.error('Could not copy text: ', err);
+      });
     });
   </script>
 </body>
