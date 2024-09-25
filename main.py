@@ -27,6 +27,7 @@ app.mount(
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
 KEY_FILE = os.getenv("KEY_FILE", "json/keys.json")
+SRV_FILE = "json/srv.json"
 BASE_URL = os.getenv("BASE_URL", "https://kuuichi.xyz")
 
 templates = Jinja2Templates(directory="templates")
@@ -51,8 +52,25 @@ def save_json(file_path: str, data):
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
     except IOError:
-        raise HTTPException(
-            status_code=500, detail="Error writing to JSON file")
+        raise HTTPException(status_code=500, detail="Error writing to JSON file")
+
+
+def load_files_json(file_path: str):
+    try:
+        with open(file_path, "r") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return []
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error decoding JSON file")
+
+
+def save_files_json(file_path: str, data):
+    try:
+        with open(file_path, "w") as file:
+            json.dump(data, file, indent=4)
+    except IOError:
+        raise HTTPException(status_code=500, detail="Error writing to JSON file")
 
 
 def init_globals():
@@ -164,8 +182,7 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         try:
             shutil.move(str(file_path), str(full_file_path))
         except Exception as e:
-            raise HTTPException(
-                status_code=500, detail=f"Error moving file: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"Error moving file: {str(e)}")
 
         if not full_file_path.exists():
             raise HTTPException(
@@ -176,6 +193,22 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         delete_uuid = str(uuid4())
         file_delete_map[delete_uuid] = str(full_file_path)
         save_json(DEL_FILE, file_delete_map)
+
+        # Save generated filename to files.json
+        files_data = load_files_json(SRV_FILE)
+        files_data.append(
+            {
+                "generated_name": generated_name,
+                "original_filename": file.filename,
+                "username": username,
+                "file_size": format_file_size(file_size),
+                "file_type": file_type,
+                "date_uploaded": upload_time,
+                "file_url": f"{BASE_URL}/{generated_name}{file_path.suffix}",
+                "delete_url": f"{BASE_URL}/delete/{delete_uuid}",
+            }
+        )
+        save_files_json(SRV_FILE, files_data)
 
         return JSONResponse(
             content={
@@ -218,8 +251,7 @@ async def delete_file(request: Request, delete_uuid: str):
     try:
         os.remove(file_path)
     except OSError as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to delete file: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
 
     return templates.TemplateResponse("file_deleted.html", {"request": request})
 
@@ -285,8 +317,7 @@ async def verify_api_key_endpoint(authorization: str = Header(None)):
         )
     except HTTPException as e:
         return JSONResponse(
-            status_code=e.status_code, content={
-                "status": "error", "message": e.detail}
+            status_code=e.status_code, content={"status": "error", "message": e.detail}
         )
 
 
@@ -307,6 +338,12 @@ async def generate_api_key(username: str):
     init_globals()
 
     return JSONResponse(content={"key": new_key})
+
+
+@app.get("/all-files")
+async def list_all_files():
+    files_data = load_files_json(SRV_FILE)
+    return JSONResponse(content={"files": files_data})
 
 
 @app.get("/{generated_filename}")
