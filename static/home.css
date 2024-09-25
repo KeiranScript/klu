@@ -20,7 +20,7 @@
 .container {
     margin: 0 auto;
     padding: 2rem;
-    max-width: 48rem; /* Adjusted for better balance */
+    max-width: 24rem; /* Adjusted for better balance */
     width: 100%;
 }
 
