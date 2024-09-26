@@ -221,7 +221,7 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         )
 
 
-@app.get("/uploads/{username}/{file_name}")
+@app.get("/{generated_filename}/embed")
 async def serve_embed(request: Request, username: str, file_name: str):
     file_path = Path(UPLOAD_DIR) / username / file_name
     if not file_path.exists():
