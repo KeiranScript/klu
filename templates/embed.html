@@ -1,15 +1,155 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-US">
+
 <head>
-    <meta property="og:title" content="{{ file_name }}" />
-    <meta property="og:description" content="Uploaded by {{ username }}. Click to view or download." />
-    <meta property="og:url" content="{{ file_url }}" />
-    <meta property="og:image" content="{{ file_url }}" />  <!-- Use for images or previews -->
-    <meta property="og:type" content="image/png" /> <!-- Change depending on file type -->
-    <meta property="og:site_name" content="Your Site" />
-    <meta name="theme-color" content="#3498db" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ filename }}</title>
+  <link rel="stylesheet" href="/static/embed.css">
 </head>
-<body>
-    Redirecting to the file...
+
+<style>
+  /* File Preview Container */
+  .preview-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    max-width: 90%;
+    margin: 2rem auto;
+    background-color: #1e1e2e;
+    /* Dark background */
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    color: #cdd6f4;
+    /* Light text */
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .preview-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  }
+
+  /* File Preview Image */
+  .upload-preview {
+    max-width: 100%;
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+  }
+
+  .upload-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Video Preview */
+  .video-preview {
+    width: 100%;
+    max-height: 480px;
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+  }
+
+  /* File Name */
+  .preview-filename {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f38ba8;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+  }
+
+  .preview-filename:hover {
+    color: #89b4fa;
+  }
+
+  /* File Info (e.g., size, type) */
+  .preview-info {
+    font-size: 1.1rem;
+    color: #a6adc8;
+    margin-bottom: 0.5rem;
+  }
+
+  /* File Info Highlights */
+  .preview-info span {
+    font-weight: bold;
+    color: #89b4fa;
+  }
+
+  /* Button */
+  .preview-button {
+    display: inline-block;
+    background-color: #f38ba8;
+    color: #1e1e2e;
+    padding: 0.75rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 1.5rem;
+    text-decoration: none;
+  }
+
+  .preview-button:hover {
+    background-color: #89b4fa;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 768px) {
+    .preview-container {
+      padding: 1.5rem;
+    }
+
+    .upload-preview {
+      margin-bottom: 1rem;
+    }
+
+    .preview-filename {
+      font-size: 1.25rem;
+    }
+
+    .preview-button {
+      padding: 0.5rem 1.5rem;
+    }
+  }
+</style>
+
+<body class="body">
+  <div class="navbar">
+    <div class="navbar-container">
+      <a href="/" class="navbar-logo">Kuhost</a>
+      <ul class="navbar-menu">
+        <li><a href="/" class="navbar-link">Home</a></li>
+        <li><a href="/upload" class="navbar-link">Upload</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1 class="heading">{{ filename }}</h1>
+
+    <div class="embed-preview">
+      {% if file_type == 'image' %}
+      <img src="{{ file_url }}" alt="{{ filename }}" style="max-width: 100%; height: auto;" />
+      {% elif file_type == 'video' %}
+      <video controls>
+        <source src="{{ file_url }}" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+      {% else %}
+      <p>Preview not available for this file type.</p>
+      {% endif %}
+    </div>
+  </div>
 </body>
+
 </html>

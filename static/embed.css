@@ -1,0 +1,110 @@
+/* File Preview Container */
+.preview-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    max-width: 90%;
+    margin: 2rem auto;
+    background-color: #1e1e2e; /* Dark background */
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    color: #cdd6f4; /* Light text */
+    text-align: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.preview-container:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* File Preview Image */
+.upload-preview {
+    max-width: 100%;
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.upload-preview:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Video Preview */
+.video-preview {
+    width: 100%;
+    max-height: 480px;
+    border-radius: 0.75rem;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+/* File Name */
+.preview-filename {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f38ba8;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+}
+
+.preview-filename:hover {
+    color: #89b4fa;
+}
+
+/* File Info (e.g., size, type) */
+.preview-info {
+    font-size: 1.1rem;
+    color: #a6adc8;
+    margin-bottom: 0.5rem;
+}
+
+/* File Info Highlights */
+.preview-info span {
+    font-weight: bold;
+    color: #89b4fa;
+}
+
+/* Button */
+.preview-button {
+    display: inline-block;
+    background-color: #f38ba8;
+    color: #1e1e2e;
+    padding: 0.75rem 2rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 1.5rem;
+    text-decoration: none;
+}
+
+.preview-button:hover {
+    background-color: #89b4fa;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .preview-container {
+        padding: 1.5rem;
+    }
+
+    .upload-preview {
+        margin-bottom: 1rem;
+    }
+
+    .preview-filename {
+        font-size: 1.25rem;
+    }
+
+    .preview-button {
+        padding: 0.5rem 1.5rem;
+    }
+}

@@ -1,3 +1,4 @@
+import mimetypes
 from fastapi import FastAPI, Depends, File, UploadFile, Request, HTTPException, Header
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -28,7 +29,7 @@ UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 DEL_FILE = os.getenv("DEL_FILE", "json/delete.json")
 KEY_FILE = os.getenv("KEY_FILE", "json/keys.json")
 SRV_FILE = "json/srv.json"
-BASE_URL = os.getenv("BASE_URL", "https://kuuichi.xyz")
+BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
 
 templates = Jinja2Templates(directory="templates")
 file_delete_map = {}
@@ -221,25 +222,6 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         )
 
 
-@app.get("/{generated_filename}/embed")
-async def serve_embed(request: Request, username: str, file_name: str):
-    file_path = Path(UPLOAD_DIR) / username / file_name
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="File not found")
-
-    file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
-
-    return templates.TemplateResponse(
-        "embed.html",
-        {
-            "request": request,
-            "file_name": file_name,
-            "file_url": file_url,
-            "username": username,
-        },
-    )
-
-
 @app.get("/delete/{delete_uuid}")
 async def delete_file(request: Request, delete_uuid: str):
     file_path = file_delete_map.pop(delete_uuid, None)
@@ -340,14 +322,8 @@ async def generate_api_key(username: str):
     return JSONResponse(content={"key": new_key})
 
 
-@app.get("/all-files")
-async def list_all_files():
-    files_data = load_files_json(SRV_FILE)
-    return JSONResponse(content={"files": files_data})
-
-
 @app.get("/{generated_filename}")
-async def serve_file(generated_filename: str):
+async def serve_file_embed(generated_filename: str, request: Request):
     original_file_path = file_name_map.get(generated_filename.split(".")[0])
 
     if not original_file_path or not os.path.exists(original_file_path):
@@ -357,7 +333,24 @@ async def serve_file(generated_filename: str):
     file_name = Path(original_file_path).name
     file_url = f"{BASE_URL}/uploads/{username}/{file_name}"
 
-    return RedirectResponse(url=file_url)
+    file_mime, _ = mimetypes.guess_type(original_file_path)
+    file_type = "other"
+
+    if file_mime and file_mime.startswith("image"):
+        file_type = "image"
+    elif file_mime and file_mime.startswith("video"):
+        file_type = "video"
+
+    return templates.TemplateResponse(
+        "embed.html",
+        {
+            "request": request,
+            "file_name": file_name,
+            "file_url": file_url,
+            "file_type": file_type,
+            "username": username,
+        },
+    )
 
 
 if __name__ == "__main__":
