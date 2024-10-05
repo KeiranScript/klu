@@ -1,6 +1,6 @@
 import mimetypes
 from fastapi import FastAPI, Depends, File, UploadFile, Request, HTTPException, Header
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
@@ -53,7 +53,8 @@ def save_json(file_path: str, data):
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
     except IOError:
-        raise HTTPException(status_code=500, detail="Error writing to JSON file")
+        raise HTTPException(
+            status_code=500, detail="Error writing to JSON file")
 
 
 def load_files_json(file_path: str):
@@ -71,7 +72,8 @@ def save_files_json(file_path: str, data):
         with open(file_path, "w") as file:
             json.dump(data, file, indent=4)
     except IOError:
-        raise HTTPException(status_code=500, detail="Error writing to JSON file")
+        raise HTTPException(
+            status_code=500, detail="Error writing to JSON file")
 
 
 def init_globals():
@@ -183,7 +185,8 @@ async def upload(file: UploadFile = File(...), username: str = Depends(verify_ap
         try:
             shutil.move(str(file_path), str(full_file_path))
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error moving file: {str(e)}")
+            raise HTTPException(
+                status_code=500, detail=f"Error moving file: {str(e)}")
 
         if not full_file_path.exists():
             raise HTTPException(
@@ -233,7 +236,8 @@ async def delete_file(request: Request, delete_uuid: str):
     try:
         os.remove(file_path)
     except OSError as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete file: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete file: {str(e)}")
 
     return templates.TemplateResponse("file_deleted.html", {"request": request})
 
@@ -299,7 +303,8 @@ async def verify_api_key_endpoint(authorization: str = Header(None)):
         )
     except HTTPException as e:
         return JSONResponse(
-            status_code=e.status_code, content={"status": "error", "message": e.detail}
+            status_code=e.status_code, content={
+                "status": "error", "message": e.detail}
         )
 
 
